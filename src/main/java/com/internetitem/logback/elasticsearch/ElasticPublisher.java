@@ -28,12 +28,13 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 	private URL url;
 	private int connectTimeout;
 	private int readTimeout;
+	private FieldMap fields;
 
 	private String indexString;
 
 	private JsonFactory jf;
 
-	public ElasticPublisher(int sleepTime, int shutdownRetries, String index, String type, URL url, int connectTimeout, int readTimeout) throws IOException {
+	public ElasticPublisher(int sleepTime, int shutdownRetries, String index, String type, URL url, int connectTimeout, int readTimeout, FieldMap fields) throws IOException {
 		if (sleepTime < 100) {
 			sleepTime = 100;
 		}
@@ -49,6 +50,7 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 		this.url = url;
 		this.connectTimeout = connectTimeout;
 		this.readTimeout = readTimeout;
+		this.fields = fields;
 	}
 
 	private String generateIndexString(String index, String type) throws IOException {

@@ -2,6 +2,7 @@ package com.internetitem.logback.elasticsearch;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -11,6 +12,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private String url;
 	private String index;
 	private String type;
+
+	private FieldMap fields;
 
 	private int sleepTime = 100;
 	private int shutdownRetries = 3;
@@ -27,7 +30,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticPublisher(sleepTime, shutdownRetries, index, type, new URL(url), connectTimeout, readTimeout);
+			this.publisher = new ElasticPublisher(sleepTime, shutdownRetries, index, type, new URL(url), connectTimeout, readTimeout, fields);
 			publisher.setContext(getContext());
 			this.publisherThread = new Thread(publisher);
 			publisherThread.setName("es-publisher");
@@ -58,6 +61,10 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setType(String type) {
 		this.type = type;
+	}
+
+	public void setFields(FieldMap fields) {
+		this.fields = fields;
 	}
 
 	public void setSleepTime(int sleepTime) {
