@@ -4,6 +4,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 
 import java.io.IOException;
+import java.net.URL;
 
 public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
@@ -13,6 +14,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	private int sleepTime = 100;
 	private int shutdownRetries = 3;
+	private int connectTimeout = 30000;
+	private int readTimeout = 30000;
 
 	private ElasticPublisher publisher;
 	private Thread publisherThread;
@@ -24,7 +27,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticPublisher(sleepTime, shutdownRetries, index, type);
+			this.publisher = new ElasticPublisher(sleepTime, shutdownRetries, index, type, new URL(url), connectTimeout, readTimeout);
+			publisher.setContext(getContext());
 			this.publisherThread = new Thread(publisher);
 			publisherThread.setName("es-publisher");
 			publisherThread.start();
@@ -62,5 +66,13 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setShutdownRetries(int shutdownRetries) {
 		this.shutdownRetries = shutdownRetries;
+	}
+
+	public void setConnectTimeout(int connectTimeout) {
+		this.connectTimeout = connectTimeout;
+	}
+
+	public void setReadTimeout(int readTimeout) {
+		this.readTimeout = readTimeout;
 	}
 }

@@ -1,22 +1,22 @@
 package com.internetitem.logback.elasticsearch;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.spi.ContextAwareBase;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
-public class ElasticPublisher implements Runnable {
-
-	private static Logger logger;
+public class ElasticPublisher extends ContextAwareBase implements Runnable {
 
 	private int shutdownRetries;
 	private int sleepTime;
@@ -25,11 +25,15 @@ public class ElasticPublisher implements Runnable {
 	private volatile boolean shutdown;
 	private volatile boolean pendingEvents;
 
+	private URL url;
+	private int connectTimeout;
+	private int readTimeout;
+
 	private String indexString;
 
 	private JsonFactory jf;
 
-	public ElasticPublisher(int sleepTime, int shutdownRetries, String index, String type) throws IOException {
+	public ElasticPublisher(int sleepTime, int shutdownRetries, String index, String type, URL url, int connectTimeout, int readTimeout) throws IOException {
 		if (sleepTime < 100) {
 			sleepTime = 100;
 		}
@@ -41,6 +45,10 @@ public class ElasticPublisher implements Runnable {
 		this.jf.setRootValueSeparator(null);
 
 		this.indexString = generateIndexString(index, type);
+
+		this.url = url;
+		this.connectTimeout = connectTimeout;
+		this.readTimeout = readTimeout;
 	}
 
 	private String generateIndexString(String index, String type) throws IOException {
@@ -79,14 +87,15 @@ public class ElasticPublisher implements Runnable {
 					} catch (Exception e) {
 						if (shutdown) {
 							if (shutdownRetries > 0) {
-								getLogger().warn("Failed to send events to Elasticsearch (" + shutdownRetries + " more retries): " + e.getMessage(), e);
+								e.printStackTrace();
+								addError("Failed to send events to Elasticsearch (" + shutdownRetries + " more retries): " + e.getMessage(), e);
 								shutdownRetries--;
 							} else {
-								getLogger().error("Failed to send events to Elasticsearch (no more retries): " + e.getMessage(), e);
+								addError("Failed to send events to Elasticsearch (no more retries): " + e.getMessage(), e);
 								return;
 							}
 						} else {
-							getLogger().warn("Failed to send events to Elasticsearch: " + e.getMessage(), e);
+							addError("Failed to send events to Elasticsearch: " + e.getMessage(), e);
 						}
 					}
 				}
@@ -99,13 +108,34 @@ public class ElasticPublisher implements Runnable {
 			} catch (InterruptedException e) {
 				shutdown = true;
 			} catch (Exception e) {
-				getLogger().error("Error processing logs: " + e.getMessage(), e);
+				addError("Error processing logs: " + e.getMessage(), e);
 			}
 		}
 	}
 
-	private void sendEvents() {
-		// TODO: Send events
+	private void sendEvents() throws IOException {
+		HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+		try {
+			urlConnection.setDoInput(true);
+			urlConnection.setDoOutput(true);
+			urlConnection.setReadTimeout(readTimeout);
+			urlConnection.setConnectTimeout(connectTimeout);
+			urlConnection.setRequestMethod("POST");
+
+			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
+			writer.write(sendBuffer);
+			writer.flush();
+			writer.close();
+
+			int rc = urlConnection.getResponseCode();
+			if (rc != 200) {
+				throw new IOException("Got response code [" + rc + "] from server");
+			}
+		} finally {
+			urlConnection.disconnect();
+		}
+
+		sendBuffer = null;
 	}
 
 	private void serializeEventsToBuffer(List<ILoggingEvent> eventsCopy) throws IOException {
@@ -154,12 +184,5 @@ public class ElasticPublisher implements Runnable {
 
 	public void shutdown() {
 		shutdown = true;
-	}
-
-	private static Logger getLogger() {
-		if (logger == null) {
-			logger = LoggerFactory.getLogger(ElasticPublisher.class);
-		}
-		return logger;
 	}
 }
