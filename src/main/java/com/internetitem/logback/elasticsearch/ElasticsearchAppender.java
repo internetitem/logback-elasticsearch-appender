@@ -2,13 +2,8 @@ package com.internetitem.logback.elasticsearch;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.io.SerializedString;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
-import java.util.Calendar;
 
 public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
@@ -16,44 +11,37 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private String index;
 	private String type;
 
-	private JsonGenerator gen;
+	private int sleepTime = 100;
+	private int shutdownRetries = 3;
 
-	public ElasticsearchAppender() throws IOException {
-		JsonFactory jf = new JsonFactory();
-		this.gen = jf.createGenerator(System.out);
+	private ElasticPublisher publisher;
+	private Thread publisherThread;
+
+	public ElasticsearchAppender() {
+	}
+
+	@Override
+	public void start() {
+		super.start();
+		try {
+			this.publisher = new ElasticPublisher(sleepTime, shutdownRetries, index, type);
+			this.publisherThread = new Thread(publisher);
+			publisherThread.setName("es-publisher");
+			publisherThread.start();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public void stop() {
+		super.stop();
+		publisher.shutdown();
 	}
 
 	@Override
 	protected void append(ILoggingEvent eventObject) {
-		try {
-			gen.setRootValueSeparator(new SerializedString("\n"));
-
-			// header row
-			gen.writeStartObject();
-			gen.writeObjectFieldStart("index");
-			gen.writeObjectField("_index", index);
-			if (type != null) {
-				gen.writeObjectField("_type", type);
-			}
-			gen.writeEndObject();
-			gen.writeEndObject();
-
-			// message row
-			gen.writeStartObject();
-
-			// timestamp
-			Calendar cal = Calendar.getInstance();
-			cal.setTimeInMillis(eventObject.getTimeStamp());
-			String timestampString = DatatypeConverter.printDateTime(cal);
-			gen.writeObjectField("@timestamp", timestampString);
-
-			gen.writeObjectField("message", eventObject.getMessage());
-
-			gen.writeEndObject();
-			gen.flush();
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to serialize log message: " + e.getMessage(), e);
-		}
+		publisher.addEvent(eventObject);
 	}
 
 	public void setUrl(String url) {
@@ -66,5 +54,13 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setType(String type) {
 		this.type = type;
+	}
+
+	public void setSleepTime(int sleepTime) {
+		this.sleepTime = sleepTime;
+	}
+
+	public void setShutdownRetries(int shutdownRetries) {
+		this.shutdownRetries = shutdownRetries;
 	}
 }
