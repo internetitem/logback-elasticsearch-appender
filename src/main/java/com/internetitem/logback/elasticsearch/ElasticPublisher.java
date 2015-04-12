@@ -18,30 +18,31 @@ import java.util.List;
 
 public class ElasticPublisher extends ContextAwareBase implements Runnable {
 
-	private int shutdownRetries;
-	private int sleepTime;
-	private List<ILoggingEvent> events;
+	public static final String THREAD_NAME = "es-writer";
+
+	private volatile List<ILoggingEvent> events;
 	private String sendBuffer;
-	private volatile boolean shutdown;
-	private volatile boolean pendingEvents;
+
+	private Object lock;
+	private String indexString;
+	private JsonFactory jf;
 
 	private URL url;
 	private int connectTimeout;
 	private int readTimeout;
+	private int sleepTime;
+	private int maxRetries;
+
 	private FieldMap fields;
 
-	private String indexString;
+	private volatile boolean working;
 
-	private JsonFactory jf;
-
-	public ElasticPublisher(int sleepTime, int shutdownRetries, String index, String type, URL url, int connectTimeout, int readTimeout, FieldMap fields) throws IOException {
+	public ElasticPublisher(int sleepTime, int maxRetries, String index, String type, URL url, int connectTimeout, int readTimeout, FieldMap fields) throws IOException {
 		if (sleepTime < 100) {
 			sleepTime = 100;
 		}
-		this.sleepTime = sleepTime;
-		this.shutdownRetries = shutdownRetries;
 		this.events = new ArrayList<ILoggingEvent>();
-
+		this.lock = new Object();
 		this.jf = new JsonFactory();
 		this.jf.setRootValueSeparator(null);
 
@@ -51,6 +52,8 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 		this.connectTimeout = connectTimeout;
 		this.readTimeout = readTimeout;
 		this.fields = fields;
+		this.sleepTime = sleepTime;
+		this.maxRetries = maxRetries;
 	}
 
 	private String generateIndexString(String index, String type) throws IOException {
@@ -70,47 +73,53 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 	}
 
 	public void addEvent(ILoggingEvent event) {
-		synchronized (events) {
-			pendingEvents = true;
+		synchronized (lock) {
 			events.add(event);
+			if (!working) {
+				working = true;
+				Thread thread = new Thread(this, THREAD_NAME);
+				thread.start();
+			}
 		}
 	}
 
 	public void run() {
+		int currentTry = 0;
 		while (true) {
 			try {
-				List<ILoggingEvent> eventsCopy = getEventsToProcess();
-				if (eventsCopy != null) {
-					serializeEventsToBuffer(eventsCopy);
-				}
-				if (sendBuffer != null) {
-					try {
-						sendEvents();
-					} catch (Exception e) {
-						if (shutdown) {
-							if (shutdownRetries > 0) {
-								e.printStackTrace();
-								addError("Failed to send events to Elasticsearch (" + shutdownRetries + " more retries): " + e.getMessage(), e);
-								shutdownRetries--;
-							} else {
-								addError("Failed to send events to Elasticsearch (no more retries): " + e.getMessage(), e);
+				Thread.sleep(sleepTime);
+
+				List<ILoggingEvent> eventsCopy = null;
+				synchronized (lock) {
+					if (!events.isEmpty()) {
+						eventsCopy = events;
+						events = new ArrayList<ILoggingEvent>();
+					}
+
+					if (eventsCopy == null) {
+						if (sendBuffer == null) {
+							// all done
+							working = false;
+							return;
+						} else {
+							// Nothing new, must be a retry
+							currentTry++;
+							if (currentTry >= maxRetries) {
+								// Oh well, better luck next time
+								working = false;
 								return;
 							}
-						} else {
-							addError("Failed to send events to Elasticsearch: " + e.getMessage(), e);
 						}
 					}
 				}
 
-				if (shutdown && !pendingEvents && sendBuffer == null) {
-					return;
+				if (eventsCopy != null) {
+					serializeEventsToBuffer(eventsCopy);
 				}
 
-				Thread.sleep(sleepTime);
-			} catch (InterruptedException e) {
-				shutdown = true;
+				sendEvents();
 			} catch (Exception e) {
-				addError("Error processing logs: " + e.getMessage(), e);
+				addError("Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage(), e);
 			}
 		}
 	}
@@ -172,19 +181,4 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 		return DatatypeConverter.printDateTime(cal);
 	}
 
-	private List<ILoggingEvent> getEventsToProcess() {
-		List<ILoggingEvent> eventsCopy = null;
-		synchronized (events) {
-			if (!events.isEmpty()) {
-				eventsCopy = new ArrayList<ILoggingEvent>(events);
-				events.clear();
-				pendingEvents = false;
-			}
-		}
-		return eventsCopy;
-	}
-
-	public void shutdown() {
-		shutdown = true;
-	}
 }

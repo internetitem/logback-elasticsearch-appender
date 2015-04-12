@@ -2,7 +2,6 @@ package com.internetitem.logback.elasticsearch;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -15,13 +14,12 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	private FieldMap fields;
 
-	private int sleepTime = 100;
-	private int shutdownRetries = 3;
+	private int sleepTime = 250;
+	private int maxRetries = 3;
 	private int connectTimeout = 30000;
 	private int readTimeout = 30000;
 
 	private ElasticPublisher publisher;
-	private Thread publisherThread;
 
 	public ElasticsearchAppender() {
 	}
@@ -30,11 +28,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticPublisher(sleepTime, shutdownRetries, index, type, new URL(url), connectTimeout, readTimeout, fields);
+			this.publisher = new ElasticPublisher(sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, fields);
 			publisher.setContext(getContext());
-			this.publisherThread = new Thread(publisher);
-			publisherThread.setName("es-publisher");
-			publisherThread.start();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -43,7 +38,6 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	@Override
 	public void stop() {
 		super.stop();
-		publisher.shutdown();
 	}
 
 	@Override
@@ -71,8 +65,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		this.sleepTime = sleepTime;
 	}
 
-	public void setShutdownRetries(int shutdownRetries) {
-		this.shutdownRetries = shutdownRetries;
+	public void setMaxRetries(int maxRetries) {
+		this.maxRetries = maxRetries;
 	}
 
 	public void setConnectTimeout(int connectTimeout) {
