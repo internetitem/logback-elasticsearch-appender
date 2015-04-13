@@ -19,6 +19,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private int connectTimeout = 30000;
 	private int readTimeout = 30000;
 	private boolean debug;
+	private boolean includeCallerData;
 
 	private ElasticPublisher publisher;
 
@@ -42,6 +43,11 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	@Override
 	protected void append(ILoggingEvent eventObject) {
+		eventObject.prepareForDeferredProcessing();
+		if (includeCallerData) {
+			eventObject.getCallerData();
+		}
+
 		publisher.addEvent(eventObject);
 	}
 
@@ -79,5 +85,9 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setDebug(boolean debug) {
 		this.debug = debug;
+	}
+
+	public void setIncludeCallerData(boolean includeCallerData) {
+		this.includeCallerData = includeCallerData;
 	}
 }
