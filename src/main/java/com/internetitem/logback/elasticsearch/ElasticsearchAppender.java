@@ -12,12 +12,13 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private String index;
 	private String type;
 
-	private FieldMap fields;
+	private ElasticProperties properties;
 
 	private int sleepTime = 250;
 	private int maxRetries = 3;
 	private int connectTimeout = 30000;
 	private int readTimeout = 30000;
+	private boolean debug;
 
 	private ElasticPublisher publisher;
 
@@ -28,8 +29,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticPublisher(sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, fields);
-			publisher.setContext(getContext());
+			this.publisher = new ElasticPublisher(getContext(), sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, debug, properties);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -57,8 +57,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		this.type = type;
 	}
 
-	public void setFields(FieldMap fields) {
-		this.fields = fields;
+	public void setProperties(ElasticProperties properties) {
+		this.properties = properties;
 	}
 
 	public void setSleepTime(int sleepTime) {
@@ -75,5 +75,9 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setReadTimeout(int readTimeout) {
 		this.readTimeout = readTimeout;
+	}
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
 	}
 }
