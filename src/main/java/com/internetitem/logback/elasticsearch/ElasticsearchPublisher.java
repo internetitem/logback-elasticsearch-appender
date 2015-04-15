@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-public class ElasticPublisher extends ContextAwareBase implements Runnable {
+public class ElasticsearchPublisher extends ContextAwareBase implements Runnable {
 
 	public static final String THREAD_NAME = "es-writer";
 
@@ -39,7 +39,7 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 
 	private volatile boolean working;
 
-	public ElasticPublisher(Context context, int sleepTime, int maxRetries, String index, String type, URL url, int connectTimeout, int readTimeout, boolean debug, ElasticProperties properties) throws IOException {
+	public ElasticsearchPublisher(Context context, int sleepTime, int maxRetries, String index, String type, URL url, int connectTimeout, int readTimeout, boolean debug, ElasticsearchProperties properties) throws IOException {
 		setContext(context);
 		if (sleepTime < 100) {
 			sleepTime = 100;
@@ -60,7 +60,7 @@ public class ElasticPublisher extends ContextAwareBase implements Runnable {
 		this.maxRetries = maxRetries;
 	}
 
-	private static List<PropertyAndEncoder> setupPropertyList(Context context, ElasticProperties properties) {
+	private static List<PropertyAndEncoder> setupPropertyList(Context context, ElasticsearchProperties properties) {
 		List<PropertyAndEncoder> list = new ArrayList<PropertyAndEncoder>(properties.getProperties().size());
 		if (properties != null) {
 			for (Property property : properties.getProperties()) {
