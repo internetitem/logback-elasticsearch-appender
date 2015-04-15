@@ -3,11 +3,11 @@ package com.internetitem.logback.elasticsearch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ElasticProperties {
+public class ElasticsearchProperties {
 
 	private List<Property> properties;
 
-	public ElasticProperties() {
+	public ElasticsearchProperties() {
 		this.properties = new ArrayList<Property>();
 	}
 
