@@ -98,7 +98,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	}
 
 	public void run() {
-		int currentTry = 0;
+		int currentTry = 1;
 		while (true) {
 			try {
 				Thread.sleep(sleepTime);
@@ -108,6 +108,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 					if (!events.isEmpty()) {
 						eventsCopy = events;
 						events = new ArrayList<ILoggingEvent>();
+						currentTry = 1;
 					}
 
 					if (eventsCopy == null) {
@@ -117,8 +118,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 							return;
 						} else {
 							// Nothing new, must be a retry
-							currentTry++;
-							if (currentTry >= maxRetries) {
+							if (currentTry > maxRetries) {
 								// Oh well, better luck next time
 								working = false;
 								return;
@@ -137,6 +137,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 				if (errorsToStderr) {
 					System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage());
 				}
+				currentTry++;
 			}
 		}
 	}
