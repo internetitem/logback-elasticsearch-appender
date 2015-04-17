@@ -12,7 +12,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private String index;
 	private String type;
 
-	private ElasticProperties properties;
+	private ElasticsearchProperties properties;
 
 	private int sleepTime = 250;
 	private int maxRetries = 3;
@@ -21,7 +21,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private boolean debug;
 	private boolean includeCallerData;
 
-	private ElasticPublisher publisher;
+	private ElasticsearchPublisher publisher;
 
 	public ElasticsearchAppender() {
 	}
@@ -30,7 +30,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticPublisher(getContext(), sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, debug, properties);
+			this.publisher = new ElasticsearchPublisher(getContext(), sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, debug, properties);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -63,7 +63,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		this.type = type;
 	}
 
-	public void setProperties(ElasticProperties properties) {
+	public void setProperties(ElasticsearchProperties properties) {
 		this.properties = properties;
 	}
 
