@@ -20,7 +20,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	public static final String THREAD_NAME = "es-writer";
 
 	private volatile List<ILoggingEvent> events;
-	private String sendBuffer;
+	private StringWriter sendBuffer;
 
 	private Object lock;
 	private String indexString;
@@ -49,6 +49,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		this.jf.setRootValueSeparator(null);
 
 		this.indexString = generateIndexString(index, type);
+		this.sendBuffer = new StringWriter();
 
 		this.url = url;
 		this.connectTimeout = connectTimeout;
@@ -158,7 +159,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 			urlConnection.setRequestMethod("POST");
 
 			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
-			writer.write(sendBuffer);
+			writer.write(sendBuffer.toString());
 			writer.flush();
 			writer.close();
 
@@ -171,7 +172,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 			urlConnection.disconnect();
 		}
 
-		sendBuffer = null;
+		sendBuffer.getBuffer().setLength(0);
 	}
 
 	private String slurpErrors(HttpURLConnection urlConnection) {
@@ -195,20 +196,13 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	}
 
 	private void serializeEventsToBuffer(List<ILoggingEvent> eventsCopy) throws IOException {
-		StringWriter writer = new StringWriter();
-		JsonGenerator gen = jf.createGenerator(writer);
+		JsonGenerator gen = jf.createGenerator(sendBuffer);
 		for (ILoggingEvent event : eventsCopy) {
 			gen.writeRaw(indexString);
 			serializeEvent(gen, event);
 			gen.writeRaw('\n');
 		}
 		gen.close();
-
-		if (sendBuffer != null) {
-			sendBuffer = sendBuffer + writer.toString();
-		} else {
-			sendBuffer = writer.toString();
-		}
 	}
 
 	private void serializeEvent(JsonGenerator gen, ILoggingEvent event) throws IOException {
