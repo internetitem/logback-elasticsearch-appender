@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class ElasticsearchPublisher extends ContextAwareBase implements Runnable {
@@ -31,12 +32,13 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	private int readTimeout;
 	private int sleepTime;
 	private int maxRetries;
+	private boolean errorsToStderr;
 
 	private List<PropertyAndEncoder> propertyList;
 
 	private volatile boolean working;
 
-	public ElasticsearchPublisher(Context context, int sleepTime, int maxRetries, String index, String type, URL url, int connectTimeout, int readTimeout, boolean debug, ElasticsearchProperties properties) throws IOException {
+	public ElasticsearchPublisher(Context context, int sleepTime, int maxRetries, String index, String type, URL url, int connectTimeout, int readTimeout, boolean debug, boolean errorsToStderr, ElasticsearchProperties properties) throws IOException {
 		setContext(context);
 		if (sleepTime < 100) {
 			sleepTime = 100;
@@ -55,6 +57,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		this.propertyList = setupPropertyList(getContext(), properties);
 		this.sleepTime = sleepTime;
 		this.maxRetries = maxRetries;
+		this.errorsToStderr = errorsToStderr;
 	}
 
 	private static List<PropertyAndEncoder> setupPropertyList(Context context, ElasticsearchProperties properties) {
@@ -131,6 +134,9 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 				sendEvents();
 			} catch (Exception e) {
 				addError("Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage(), e);
+				if (errorsToStderr) {
+					System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage());
+				}
 			}
 		}
 	}

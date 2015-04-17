@@ -20,6 +20,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private int readTimeout = 30000;
 	private boolean debug;
 	private boolean includeCallerData;
+	private boolean errorsToStderr;
 
 	private ElasticsearchPublisher publisher;
 
@@ -30,7 +31,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticsearchPublisher(getContext(), sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, debug, properties);
+			this.publisher = new ElasticsearchPublisher(getContext(), sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, debug, errorsToStderr, properties);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -90,4 +91,9 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void setIncludeCallerData(boolean includeCallerData) {
 		this.includeCallerData = includeCallerData;
 	}
+
+	public void setErrorsToStderr(boolean errorsToStderr) {
+		this.errorsToStderr = errorsToStderr;
+	}
+
 }
