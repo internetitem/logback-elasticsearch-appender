@@ -7,10 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -160,13 +157,34 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 			int rc = urlConnection.getResponseCode();
 			if (rc != 200) {
-				throw new IOException("Got response code [" + rc + "] from server");
+				String data = slurpErrors(urlConnection);
+				throw new IOException("Got response code [" + rc + "] from server with data " + data);
 			}
 		} finally {
 			urlConnection.disconnect();
 		}
 
 		sendBuffer = null;
+	}
+
+	private String slurpErrors(HttpURLConnection urlConnection) {
+		try {
+			InputStream stream = urlConnection.getErrorStream();
+			if (stream == null) {
+                return "<no data>";
+            }
+
+			StringBuilder builder = new StringBuilder();
+			InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+			char[] buf = new char[2048];
+			int numRead;
+			while ((numRead = reader.read(buf)) > 0) {
+                builder.append(buf, 0, numRead);
+            }
+			return builder.toString();
+		} catch (Exception e) {
+			return "<error retrieving data: " + e.getMessage() + ">";
+		}
 	}
 
 	private void serializeEventsToBuffer(List<ILoggingEvent> eventsCopy) throws IOException {
