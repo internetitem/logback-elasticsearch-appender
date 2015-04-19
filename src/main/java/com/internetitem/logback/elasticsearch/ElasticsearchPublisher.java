@@ -27,22 +27,14 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	private JsonFactory jf;
 
 	private URL url;
-	private boolean debug;
-	private int connectTimeout;
-	private int readTimeout;
-	private int sleepTime;
-	private int maxRetries;
-	private boolean errorsToStderr;
+	private Settings settings;
 
 	private List<PropertyAndEncoder> propertyList;
 
 	private volatile boolean working;
 
-	public ElasticsearchPublisher(Context context, int sleepTime, int maxRetries, String index, String type, URL url, int connectTimeout, int readTimeout, boolean debug, boolean errorsToStderr, ElasticsearchProperties properties) throws IOException {
+	public ElasticsearchPublisher(Context context, String index, String type, URL url, Settings settings, ElasticsearchProperties properties) throws IOException {
 		setContext(context);
-		if (sleepTime < 100) {
-			sleepTime = 100;
-		}
 		this.events = new ArrayList<ILoggingEvent>();
 		this.lock = new Object();
 		this.jf = new JsonFactory();
@@ -52,13 +44,8 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		this.sendBuffer = new StringWriter();
 
 		this.url = url;
-		this.connectTimeout = connectTimeout;
-		this.readTimeout = readTimeout;
-		this.debug = debug;
+		this.settings = settings;
 		this.propertyList = setupPropertyList(getContext(), properties);
-		this.sleepTime = sleepTime;
-		this.maxRetries = maxRetries;
-		this.errorsToStderr = errorsToStderr;
 	}
 
 	private static List<PropertyAndEncoder> setupPropertyList(Context context, ElasticsearchProperties properties) {
@@ -100,9 +87,10 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 	public void run() {
 		int currentTry = 1;
+		int maxRetries = settings.getMaxRetries();
 		while (true) {
 			try {
-				Thread.sleep(sleepTime);
+				Thread.sleep(settings.getSleepTime());
 
 				List<ILoggingEvent> eventsCopy = null;
 				synchronized (lock) {
@@ -135,7 +123,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 				sendEvents();
 			} catch (Exception e) {
 				addError("Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage(), e);
-				if (errorsToStderr) {
+				if (settings.isErrorsToStderr()) {
 					System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage());
 				}
 				currentTry++;
@@ -144,7 +132,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	}
 
 	private void sendEvents() throws IOException {
-		if (debug) {
+		if (settings.isDebug()) {
 			System.err.println(sendBuffer);
 			sendBuffer = null;
 			return;
@@ -154,8 +142,8 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		try {
 			urlConnection.setDoInput(true);
 			urlConnection.setDoOutput(true);
-			urlConnection.setReadTimeout(readTimeout);
-			urlConnection.setConnectTimeout(connectTimeout);
+			urlConnection.setReadTimeout(settings.getReadTimeout());
+			urlConnection.setConnectTimeout(settings.getConnectTimeout());
 			urlConnection.setRequestMethod("POST");
 
 			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");

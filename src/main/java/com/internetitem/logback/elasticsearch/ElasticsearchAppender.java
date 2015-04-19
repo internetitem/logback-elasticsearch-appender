@@ -12,26 +12,21 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	private String index;
 	private String type;
 
-	private ElasticsearchProperties properties;
+	private Settings settings;
 
-	private int sleepTime = 250;
-	private int maxRetries = 3;
-	private int connectTimeout = 30000;
-	private int readTimeout = 30000;
-	private boolean debug;
-	private boolean includeCallerData;
-	private boolean errorsToStderr;
+	private ElasticsearchProperties properties;
 
 	private ElasticsearchPublisher publisher;
 
 	public ElasticsearchAppender() {
+		this.settings = new Settings();
 	}
 
 	@Override
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticsearchPublisher(getContext(), sleepTime, maxRetries, index, type, new URL(url), connectTimeout, readTimeout, debug, errorsToStderr, properties);
+			this.publisher = new ElasticsearchPublisher(getContext(), index, type, new URL(url), settings, properties);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -45,7 +40,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	@Override
 	protected void append(ILoggingEvent eventObject) {
 		eventObject.prepareForDeferredProcessing();
-		if (includeCallerData) {
+		if (settings.isIncludeCallerData()) {
 			eventObject.getCallerData();
 		}
 
@@ -69,31 +64,31 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	}
 
 	public void setSleepTime(int sleepTime) {
-		this.sleepTime = sleepTime;
+		settings.setSleepTime(sleepTime);
 	}
 
 	public void setMaxRetries(int maxRetries) {
-		this.maxRetries = maxRetries;
+		settings.setMaxRetries(maxRetries);
 	}
 
 	public void setConnectTimeout(int connectTimeout) {
-		this.connectTimeout = connectTimeout;
+		settings.setConnectTimeout(connectTimeout);
 	}
 
 	public void setReadTimeout(int readTimeout) {
-		this.readTimeout = readTimeout;
+		settings.setReadTimeout(readTimeout);
 	}
 
 	public void setDebug(boolean debug) {
-		this.debug = debug;
+		settings.setDebug(debug);
 	}
 
 	public void setIncludeCallerData(boolean includeCallerData) {
-		this.includeCallerData = includeCallerData;
+		settings.setIncludeCallerData(includeCallerData);
 	}
 
 	public void setErrorsToStderr(boolean errorsToStderr) {
-		this.errorsToStderr = errorsToStderr;
+		settings.setErrorsToStderr(errorsToStderr);
 	}
 
 }
