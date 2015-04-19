@@ -1,4 +1,4 @@
-package com.internetitem.logback.elasticsearch;
+package com.internetitem.logback.elasticsearch.config;
 
 public class Property {
 	private String name;

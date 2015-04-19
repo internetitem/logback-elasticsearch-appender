@@ -2,21 +2,19 @@ package com.internetitem.logback.elasticsearch;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
+import com.internetitem.logback.elasticsearch.config.Settings;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
-	private String url;
-	private String index;
-	private String type;
-
 	private Settings settings;
-
 	private ElasticsearchProperties properties;
-
 	private ElasticsearchPublisher publisher;
+	private ErrorReporter errorReporter;
 
 	public ElasticsearchAppender() {
 		this.settings = new Settings();
@@ -26,7 +24,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticsearchPublisher(getContext(), index, type, new URL(url), settings, properties);
+			this.errorReporter = new ErrorReporter(getContext());
+			this.publisher = new ElasticsearchPublisher(getContext(), errorReporter, settings, properties);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -39,24 +38,17 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	@Override
 	protected void append(ILoggingEvent eventObject) {
+		String loggerName = settings.getLoggerName();
+		if (loggerName != null && eventObject.getLoggerName().equals(loggerName)) {
+			return;
+		}
+
 		eventObject.prepareForDeferredProcessing();
 		if (settings.isIncludeCallerData()) {
 			eventObject.getCallerData();
 		}
 
 		publisher.addEvent(eventObject);
-	}
-
-	public void setUrl(String url) {
-		this.url = url;
-	}
-
-	public void setIndex(String index) {
-		this.index = index;
-	}
-
-	public void setType(String type) {
-		this.type = type;
 	}
 
 	public void setProperties(ElasticsearchProperties properties) {
@@ -79,10 +71,6 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		settings.setReadTimeout(readTimeout);
 	}
 
-	public void setDebug(boolean debug) {
-		settings.setDebug(debug);
-	}
-
 	public void setIncludeCallerData(boolean includeCallerData) {
 		settings.setIncludeCallerData(includeCallerData);
 	}
@@ -95,4 +83,19 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		settings.setMaxQueueSize(maxQueueSize);
 	}
 
+	public void setIndex(String index) {
+		settings.setIndex(index);
+	}
+
+	public void setType(String type) {
+		settings.setType(type);
+	}
+
+	public void setUrl(String url) throws MalformedURLException {
+		settings.setUrl(new URL(url));
+	}
+
+	public void setLoggerName(String logger) {
+		settings.setLoggerName(logger);
+	}
 }

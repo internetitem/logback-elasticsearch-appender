@@ -1,4 +1,4 @@
-package com.internetitem.logback.elasticsearch;
+package com.internetitem.logback.elasticsearch.config;
 
 import java.util.ArrayList;
 import java.util.List;

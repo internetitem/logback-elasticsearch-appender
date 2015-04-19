@@ -3,6 +3,7 @@ package com.internetitem.logback.elasticsearch;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Context;
+import com.internetitem.logback.elasticsearch.config.Property;
 
 public class PropertyAndEncoder {
 	private Property property;

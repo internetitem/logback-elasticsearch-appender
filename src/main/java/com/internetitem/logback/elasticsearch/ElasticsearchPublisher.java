@@ -2,56 +2,78 @@ package com.internetitem.logback.elasticsearch;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Context;
-import ch.qos.logback.core.spi.ContextAwareBase;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
+import com.internetitem.logback.elasticsearch.config.Property;
+import com.internetitem.logback.elasticsearch.config.Settings;
+import com.internetitem.logback.elasticsearch.writer.ElasticsearchWriter;
+import com.internetitem.logback.elasticsearch.writer.LoggerWriter;
+import com.internetitem.logback.elasticsearch.writer.StdErrWriter;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
-public class ElasticsearchPublisher extends ContextAwareBase implements Runnable {
+public class ElasticsearchPublisher implements Runnable {
 
 	public static final String THREAD_NAME = "es-writer";
 
 	private volatile List<ILoggingEvent> events;
-	private ElasticsearchFileSpigot spigot;
-	private StringWriter sendBuffer;
-
-	private final Object lock;
-	private String indexString;
-	private JsonFactory jf;
-
-	private URL url;
-	private Settings settings;
-
+	private ElasticsearchOutputAggregator spigot;
 	private List<PropertyAndEncoder> propertyList;
 
-	private volatile boolean working;
-	private boolean bufferExceeded;
+	private String indexString;
+	private JsonFactory jf;
+	private JsonGenerator jsonGenerator;
 
-	public ElasticsearchPublisher(Context context, String index, String type, URL url, Settings settings, ElasticsearchProperties properties) throws IOException {
-		setContext(context);
+	private ErrorReporter errorReporter;
+	private Settings settings;
+
+	private final Object lock;
+
+
+	private volatile boolean working;
+
+
+	public ElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties) throws IOException {
+		this.errorReporter = errorReporter;
 		this.events = new ArrayList<ILoggingEvent>();
 		this.lock = new Object();
+		this.settings = settings;
+
+		this.spigot = configureSpigot(settings, errorReporter);
+
 		this.jf = new JsonFactory();
 		this.jf.setRootValueSeparator(null);
+		this.jsonGenerator = jf.createGenerator(spigot);
 
-		this.indexString = generateIndexString(index, type);
-		this.sendBuffer = new StringWriter();
-		this.spigot = new ElasticsearchFileSpigot(sendBuffer);
-
-		this.url = url;
-		this.settings = settings;
-		this.propertyList = setupPropertyList(getContext(), properties);
+		this.indexString = generateIndexString(jf, settings.getIndex(), settings.getType());
+		this.propertyList = generatePropertyList(context, properties);
 	}
 
-	private static List<PropertyAndEncoder> setupPropertyList(Context context, ElasticsearchProperties properties) {
+	private static ElasticsearchOutputAggregator configureSpigot(Settings settings, ErrorReporter errorReporter) throws IOException {
+		ElasticsearchOutputAggregator spigot = new ElasticsearchOutputAggregator(settings, errorReporter);
+
+		if (settings.isErrorsToStderr()) {
+			spigot.addWriter(new StdErrWriter());
+		}
+
+		if (settings.getLoggerName() != null) {
+			spigot.addWriter(new LoggerWriter(settings.getLoggerName()));
+		}
+
+		if (settings.getUrl() != null) {
+			spigot.addWriter(new ElasticsearchWriter(errorReporter, settings));
+		}
+
+		return spigot;
+	}
+
+	private static List<PropertyAndEncoder> generatePropertyList(Context context, ElasticsearchProperties properties) {
 		List<PropertyAndEncoder> list = new ArrayList<PropertyAndEncoder>();
 		if (properties != null) {
 			for (Property property : properties.getProperties()) {
@@ -61,7 +83,8 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		return list;
 	}
 
-	private String generateIndexString(String index, String type) throws IOException {
+
+	private static String generateIndexString(JsonFactory jf, String index, String type) throws IOException {
 		StringWriter writer = new StringWriter();
 		JsonGenerator gen = jf.createGenerator(writer);
 		gen.writeStartObject();
@@ -76,6 +99,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		gen.close();
 		return writer.toString();
 	}
+
 
 	public void addEvent(ILoggingEvent event) {
 		synchronized (lock) {
@@ -104,7 +128,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 					}
 
 					if (eventsCopy == null) {
-						if (sendBuffer == null) {
+						if (!spigot.hasPendingData()) {
 							// all done
 							working = false;
 							return;
@@ -120,94 +144,30 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 				}
 
 				if (eventsCopy != null) {
-					serializeEventsToBuffer(eventsCopy);
+					serializeEvents(jsonGenerator, indexString, eventsCopy, propertyList);
 				}
 
-				sendEvents();
-			} catch (Exception e) {
-				addError("Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage(), e);
-				if (settings.isErrorsToStderr()) {
-					System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch (try " + currentTry + " of " + maxRetries + "): " + e.getMessage());
+				if (!spigot.sendData()) {
+					currentTry++;
 				}
+			} catch (Exception e) {
+				errorReporter.addError("Internal error handling log data: " + e.getMessage(), e);
 				currentTry++;
 			}
 		}
 	}
 
-	private void sendEvents() throws IOException {
-		if (settings.isDebug()) {
-			System.err.println(sendBuffer);
-			sendBuffer = null;
-			return;
-		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
-		try {
-			urlConnection.setDoInput(true);
-			urlConnection.setDoOutput(true);
-			urlConnection.setReadTimeout(settings.getReadTimeout());
-			urlConnection.setConnectTimeout(settings.getConnectTimeout());
-			urlConnection.setRequestMethod("POST");
-
-			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
-			writer.write(sendBuffer.toString());
-			writer.flush();
-			writer.close();
-
-			int rc = urlConnection.getResponseCode();
-			if (rc != 200) {
-				String data = slurpErrors(urlConnection);
-				throw new IOException("Got response code [" + rc + "] from server with data " + data);
-			}
-		} finally {
-			urlConnection.disconnect();
-		}
-
-		sendBuffer.getBuffer().setLength(0);
-		if (bufferExceeded) {
-			addInfo("Send queue cleared - log messages will no longer be lost");
-			bufferExceeded = false;
-			spigot.setDisableBuffer(false);
-		}
-	}
-
-	private String slurpErrors(HttpURLConnection urlConnection) {
-		try {
-			InputStream stream = urlConnection.getErrorStream();
-			if (stream == null) {
-                return "<no data>";
-            }
-
-			StringBuilder builder = new StringBuilder();
-			InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
-			char[] buf = new char[2048];
-			int numRead;
-			while ((numRead = reader.read(buf)) > 0) {
-                builder.append(buf, 0, numRead);
-            }
-			return builder.toString();
-		} catch (Exception e) {
-			return "<error retrieving data: " + e.getMessage() + ">";
-		}
-	}
-
-	private void serializeEventsToBuffer(List<ILoggingEvent> eventsCopy) throws IOException {
-		JsonGenerator gen = jf.createGenerator(spigot);
+	private static void serializeEvents(JsonGenerator gen, String indexString, List<ILoggingEvent> eventsCopy, List<PropertyAndEncoder> propertyList) throws IOException {
 		for (ILoggingEvent event : eventsCopy) {
 			gen.writeRaw(indexString);
-			serializeEvent(gen, event);
+			serializeEvent(gen, event, propertyList);
 			gen.writeRaw('\n');
 		}
-		gen.close();
-
-		if (sendBuffer.getBuffer().length() > settings.getMaxQueueSize() && !bufferExceeded) {
-			addWarn("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
-			bufferExceeded = true;
-			spigot.setDisableBuffer(true);
-		}
+		gen.flush();
 	}
 
-	private void serializeEvent(JsonGenerator gen, ILoggingEvent event) throws IOException {
+	private static void serializeEvent(JsonGenerator gen, ILoggingEvent event, List<PropertyAndEncoder> propertyList) throws IOException {
 		gen.writeStartObject();
 
 		gen.writeObjectField("@timestamp", getTimestamp(event.getTimeStamp()));
@@ -223,7 +183,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		gen.writeEndObject();
 	}
 
-	private String getTimestamp(long timestamp) {
+	private static String getTimestamp(long timestamp) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(timestamp);
 		return DatatypeConverter.printDateTime(cal);

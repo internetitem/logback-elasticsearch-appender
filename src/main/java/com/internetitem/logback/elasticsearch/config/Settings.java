@@ -1,15 +1,38 @@
-package com.internetitem.logback.elasticsearch;
+package com.internetitem.logback.elasticsearch.config;
+
+import java.net.URL;
 
 public class Settings {
+
+	private String index;
+	private String type;
+	private URL url;
+
+	private String loggerName;
 
 	private int sleepTime = 250;
 	private int maxRetries = 3;
 	private int connectTimeout = 30000;
 	private int readTimeout = 30000;
-	private boolean debug;
 	private boolean errorsToStderr;
 	private boolean includeCallerData;
 	private int maxQueueSize = 100 * 1024 * 1024;
+
+	public String getIndex() {
+		return index;
+	}
+
+	public void setIndex(String index) {
+		this.index = index;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
 
 	public int getSleepTime() {
 		return sleepTime;
@@ -46,14 +69,6 @@ public class Settings {
 		this.readTimeout = readTimeout;
 	}
 
-	public boolean isDebug() {
-		return debug;
-	}
-
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
 	public boolean isErrorsToStderr() {
 		return errorsToStderr;
 	}
@@ -76,5 +91,21 @@ public class Settings {
 
 	public void setMaxQueueSize(int maxQueueSize) {
 		this.maxQueueSize = maxQueueSize;
+	}
+
+	public String getLoggerName() {
+		return loggerName;
+	}
+
+	public void setLoggerName(String loggerName) {
+		this.loggerName = loggerName;
+	}
+
+	public URL getUrl() {
+		return url;
+	}
+
+	public void setUrl(URL url) {
+		this.url = url;
 	}
 }

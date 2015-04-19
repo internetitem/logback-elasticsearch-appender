@@ -15,7 +15,7 @@ In your logback.xml:
             <url>http://yourserver/_bulk</url>
             <index>indexname</index>
             <type>tester</type>
-            <debug>false</debug>
+            <loggerName>es-logger</loggerName>
             <properties>
                 <property>
                     <name>host</name>
@@ -40,6 +40,15 @@ In your logback.xml:
                 </property>
             </properties>
         </appender>
+        
+        <logger name="es-logger" level="INFO" additivity="false">
+            <appender name="ES_RAW" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>%msg</pattern>
+                </encoder>
+            </appender>
+        </logger>
+
 
 Configuration Reference
 =======================
@@ -47,7 +56,6 @@ Configuration Reference
  * `url` (required): The URL to your Elasticsearch bulk API endpoint
  * `index` (required): Name if the index to publish to
  * `type` (optional): Elasticsearch `_type` field for records
- * `debug` (optional, default `false`): If set to `true`, the raw JSON is dumped to System.err and *not* send to Elasticsearch
  * `sleepTime` (optional, default 250): Time (in ms) to sleep between attempts at delivering a message
  * `maxRetries` (optional, default 3): Number of times to attempt retrying a message on failure. Note that subsequent log messages reset the retry count to 0. This value is important if your program is about to exit (i.e. it is not producing any more log lines) but is unable to deliver some messages to ES
  * `connectTimeout` (optional, default 30000): Elasticsearch connect timeout (in ms)
@@ -55,6 +63,7 @@ Configuration Reference
  * `includeCallerData` (optional, default false): If set to `true`, save the caller data (identical to the [AsyncAppender's includeCallerData](http://logback.qos.ch/manual/appenders.html#asyncIncludeCallerData))
  * `errorsToStderr` (optional, default false): If set to `true`, any errors in communicating with Elasticsearch will also be dumped to stderr
  * `maxQueueSize` (optional, default 104,857,600 = 200MB): Maximum size (in characters) of the send buffer. After this point, *logs will be dropped*. This should only happen if Elasticsearch is down, but this is a self-protection mechanism to ensure that the logging system doesn't cause the main process to run out of memory. Note that this maximum is approximate; once the maximum is hit, no new logs will be accepted until it shrinks, but any logs already accepted to be processed will still be added to the buffer
+ * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
 
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
