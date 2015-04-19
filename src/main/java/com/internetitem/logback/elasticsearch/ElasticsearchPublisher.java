@@ -23,7 +23,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	private ElasticsearchFileSpigot spigot;
 	private StringWriter sendBuffer;
 
-	private Object lock;
+	private final Object lock;
 	private String indexString;
 	private JsonFactory jf;
 
@@ -52,7 +52,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	}
 
 	private static List<PropertyAndEncoder> setupPropertyList(Context context, ElasticsearchProperties properties) {
-		List<PropertyAndEncoder> list = new ArrayList<PropertyAndEncoder>(properties.getProperties().size());
+		List<PropertyAndEncoder> list = new ArrayList<PropertyAndEncoder>();
 		if (properties != null) {
 			for (Property property : properties.getProperties()) {
 				list.add(new PropertyAndEncoder(property, context));
