@@ -20,6 +20,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	public static final String THREAD_NAME = "es-writer";
 
 	private volatile List<ILoggingEvent> events;
+	private ElasticsearchFileSpigot spigot;
 	private StringWriter sendBuffer;
 
 	private Object lock;
@@ -32,7 +33,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	private List<PropertyAndEncoder> propertyList;
 
 	private volatile boolean working;
-	private volatile boolean bufferExceeded;
+	private boolean bufferExceeded;
 
 	public ElasticsearchPublisher(Context context, String index, String type, URL url, Settings settings, ElasticsearchProperties properties) throws IOException {
 		setContext(context);
@@ -43,6 +44,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 		this.indexString = generateIndexString(index, type);
 		this.sendBuffer = new StringWriter();
+		this.spigot = new ElasticsearchFileSpigot(sendBuffer);
 
 		this.url = url;
 		this.settings = settings;
@@ -77,10 +79,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 	public void addEvent(ILoggingEvent event) {
 		synchronized (lock) {
-			if (!bufferExceeded) {
-				events.add(event);
-			}
-
+			events.add(event);
 			if (!working) {
 				working = true;
 				Thread thread = new Thread(this, THREAD_NAME);
@@ -168,6 +167,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		if (bufferExceeded) {
 			addInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
+			spigot.setDisableBuffer(false);
 		}
 	}
 
@@ -192,7 +192,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	}
 
 	private void serializeEventsToBuffer(List<ILoggingEvent> eventsCopy) throws IOException {
-		JsonGenerator gen = jf.createGenerator(sendBuffer);
+		JsonGenerator gen = jf.createGenerator(spigot);
 		for (ILoggingEvent event : eventsCopy) {
 			gen.writeRaw(indexString);
 			serializeEvent(gen, event);
@@ -203,6 +203,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		if (sendBuffer.getBuffer().length() > settings.getMaxQueueSize() && !bufferExceeded) {
 			addWarn("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
 			bufferExceeded = true;
+			spigot.setDisableBuffer(true);
 		}
 	}
 
