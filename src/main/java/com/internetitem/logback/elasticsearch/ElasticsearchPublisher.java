@@ -10,10 +10,15 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class ElasticsearchPublisher extends ContextAwareBase implements Runnable {
 
@@ -29,13 +34,18 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 	private URL url;
 	private Settings settings;
+	private FileAppenderSettings fileAppenderSettings;
 
 	private List<PropertyAndEncoder> propertyList;
 
 	private volatile boolean working;
 	private boolean bufferExceeded;
 
-	public ElasticsearchPublisher(Context context, String index, String type, URL url, Settings settings, ElasticsearchProperties properties) throws IOException {
+	private Date nextRolloverTime;
+	private FileWriter fileWriter;
+	private File currentFile;
+
+	public ElasticsearchPublisher(Context context, String index, String type, URL url, Settings settings, FileAppenderSettings fileAppenderSettings, ElasticsearchProperties properties) throws IOException {
 		setContext(context);
 		this.events = new ArrayList<ILoggingEvent>();
 		this.lock = new Object();
@@ -48,6 +58,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 		this.url = url;
 		this.settings = settings;
+		this.fileAppenderSettings = fileAppenderSettings;
 		this.propertyList = setupPropertyList(getContext(), properties);
 	}
 
@@ -194,6 +205,8 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	private void serializeEventsToBuffer(List<ILoggingEvent> eventsCopy) throws IOException {
 		JsonGenerator gen = jf.createGenerator(spigot);
 		for (ILoggingEvent event : eventsCopy) {
+			setupFileAppender();
+
 			gen.writeRaw(indexString);
 			serializeEvent(gen, event);
 			gen.writeRaw('\n');
@@ -205,6 +218,84 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 			bufferExceeded = true;
 			spigot.setDisableBuffer(true);
 		}
+	}
+
+	private void setupFileAppender() throws IOException {
+		if (fileAppenderSettings == null || fileAppenderSettings.getFilename() == null) {
+			return;
+		}
+
+		Date now = new Date();
+		if (now.after(nextRolloverTime)) {
+			rollFile();
+		}
+
+		if (fileWriter == null) {
+			String filename = getFilenameForDate(now);
+			currentFile = new File(filename);
+			fileWriter = new FileWriter(currentFile, true);
+			spigot.setFileWriter(fileWriter);
+			nextRolloverTime = calculateNextRolloverTime(now);
+		}
+	}
+
+	private void rollFile() throws IOException {
+		fileWriter.close();
+
+		// Delete old files, check up to one week back from the earliest date
+		int maxDays = fileAppenderSettings.getMaxDays();
+		if (maxDays > 0) {
+			Date today = DateUtil.clearTime(new Date());
+			Date earliestDate = DateUtil.addDays(today, -maxDays);
+			Date oneWeekEarlier = DateUtil.addDays(earliestDate, -7);
+			for (Date cur = earliestDate; cur.compareTo(oneWeekEarlier) >= 0; cur = DateUtil.addDays(cur, -1)) {
+				String filenameForDate = getFilenameForDate(cur);
+				if (fileAppenderSettings.isArchive()) {
+					filenameForDate += ".zip";
+				}
+				File fileForDate = new File(filenameForDate);
+				if (fileForDate.exists()) {
+					fileForDate.delete();
+				}
+			}
+		}
+
+		// Zip current file if necessary
+		if (fileAppenderSettings.isArchive()) {
+			String currentName = currentFile.getName();
+			File zipFile = new File(currentFile.getParentFile(), currentName + ".zip");
+			FileOutputStream fos = new FileOutputStream(zipFile);
+			ZipOutputStream zos = new ZipOutputStream(fos);
+			zos.putNextEntry(new ZipEntry(currentName));
+
+			byte[] buf = new byte[4096];
+			int numRead;
+			FileInputStream fis = new FileInputStream(currentFile);
+			while ((numRead = fis.read(buf)) > 0) {
+				zos.write(buf, 0, numRead);
+			}
+			zos.closeEntry();
+			zos.close();
+		}
+
+		spigot.setFileWriter(null);
+		fileWriter = null;
+		currentFile = null;
+	}
+
+	private static Date calculateNextRolloverTime(Date now) {
+		return DateUtil.addDays(DateUtil.clearTime(now), 1);
+	}
+
+	private String getFilenameForDate(Date date) {
+		String rawFilename = fileAppenderSettings.getFilename();
+		String dateString = getDateString(date);
+		String filename = rawFilename.replaceAll("%d", dateString);
+		return filename;
+	}
+
+	private String getDateString(Date date) {
+		return new SimpleDateFormat("yyyy-MM-dd").format(date);
 	}
 
 	private void serializeEvent(JsonGenerator gen, ILoggingEvent event) throws IOException {

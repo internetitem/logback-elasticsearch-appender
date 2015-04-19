@@ -18,6 +18,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	private ElasticsearchPublisher publisher;
 
+	private FileAppenderSettings fileAppender;
+
 	public ElasticsearchAppender() {
 		this.settings = new Settings();
 	}
@@ -26,7 +28,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.publisher = new ElasticsearchPublisher(getContext(), index, type, new URL(url), settings, properties);
+			this.publisher = new ElasticsearchPublisher(getContext(), index, type, new URL(url), settings, fileAppender, properties);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -93,5 +95,9 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setMaxQueueSize(int maxQueueSize) {
 		settings.setMaxQueueSize(maxQueueSize);
+	}
+
+	public void setFileAppender(FileAppenderSettings fileAppender) {
+		this.fileAppender = fileAppender;
 	}
 }
