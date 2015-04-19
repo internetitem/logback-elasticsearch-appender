@@ -32,6 +32,7 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 	private List<PropertyAndEncoder> propertyList;
 
 	private volatile boolean working;
+	private volatile boolean bufferExceeded;
 
 	public ElasticsearchPublisher(Context context, String index, String type, URL url, Settings settings, ElasticsearchProperties properties) throws IOException {
 		setContext(context);
@@ -76,7 +77,10 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 
 	public void addEvent(ILoggingEvent event) {
 		synchronized (lock) {
-			events.add(event);
+			if (!bufferExceeded) {
+				events.add(event);
+			}
+
 			if (!working) {
 				working = true;
 				Thread thread = new Thread(this, THREAD_NAME);
@@ -161,6 +165,10 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 		}
 
 		sendBuffer.getBuffer().setLength(0);
+		if (bufferExceeded) {
+			addInfo("Send queue cleared - log messages will no longer be lost");
+			bufferExceeded = false;
+		}
 	}
 
 	private String slurpErrors(HttpURLConnection urlConnection) {
@@ -191,6 +199,11 @@ public class ElasticsearchPublisher extends ContextAwareBase implements Runnable
 			gen.writeRaw('\n');
 		}
 		gen.close();
+
+		if (sendBuffer.getBuffer().length() > settings.getMaxQueueSize() && !bufferExceeded) {
+			addWarn("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
+			bufferExceeded = true;
+		}
 	}
 
 	private void serializeEvent(JsonGenerator gen, ILoggingEvent event) throws IOException {

@@ -91,4 +91,7 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		settings.setErrorsToStderr(errorsToStderr);
 	}
 
+	public void setMaxQueueSize(int maxQueueSize) {
+		settings.setMaxQueueSize(maxQueueSize);
+	}
 }
