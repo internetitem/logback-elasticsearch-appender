@@ -61,7 +61,8 @@ Configuration Reference
  * `connectTimeout` (optional, default 30000): Elasticsearch connect timeout (in ms)
  * `readTimeout` (optional, default 30000): Elasticsearch read timeout (in ms)
  * `includeCallerData` (optional, default false): If set to `true`, save the caller data (identical to the [AsyncAppender's includeCallerData](http://logback.qos.ch/manual/appenders.html#asyncIncludeCallerData))
- * `errorsToStderr` (optional, default false): If set to `true`, any errors in communicating with Elasticsearch will also be dumped to stderr
+ * `errorsToStderr` (optional, default false): If set to `true`, any errors in communicating with Elasticsearch will also be dumped to stderr (normally they are only reported to the internal Logback Status system, in order to prevent a feedback loop)
+ * `logsToStderr` (optional, default false): If set to `true`, dump the raw Elasticsearch messages to stderr
  * `maxQueueSize` (optional, default 104,857,600 = 200MB): Maximum size (in characters) of the send buffer. After this point, *logs will be dropped*. This should only happen if Elasticsearch is down, but this is a self-protection mechanism to ensure that the logging system doesn't cause the main process to run out of memory. Note that this maximum is approximate; once the maximum is hit, no new logs will be accepted until it shrinks, but any logs already accepted to be processed will still be added to the buffer
  * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
 

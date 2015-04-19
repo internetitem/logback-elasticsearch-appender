@@ -4,6 +4,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
 import com.internetitem.logback.elasticsearch.config.Settings;
+import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -77,6 +78,10 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
 	public void setErrorsToStderr(boolean errorsToStderr) {
 		settings.setErrorsToStderr(errorsToStderr);
+	}
+
+	public void setLogsToStderr(boolean logsToStderr) {
+		settings.setLogsToStderr(logsToStderr);
 	}
 
 	public void setMaxQueueSize(int maxQueueSize) {

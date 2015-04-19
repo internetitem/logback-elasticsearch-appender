@@ -1,4 +1,4 @@
-package com.internetitem.logback.elasticsearch;
+package com.internetitem.logback.elasticsearch.util;
 
 import java.util.Calendar;
 import java.util.Date;

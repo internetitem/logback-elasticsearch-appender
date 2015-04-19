@@ -14,6 +14,7 @@ public class Settings {
 	private int maxRetries = 3;
 	private int connectTimeout = 30000;
 	private int readTimeout = 30000;
+	private boolean logsToStderr;
 	private boolean errorsToStderr;
 	private boolean includeCallerData;
 	private int maxQueueSize = 100 * 1024 * 1024;
@@ -67,6 +68,14 @@ public class Settings {
 
 	public void setReadTimeout(int readTimeout) {
 		this.readTimeout = readTimeout;
+	}
+
+	public boolean isLogsToStderr() {
+		return logsToStderr;
+	}
+
+	public void setLogsToStderr(boolean logsToStderr) {
+		this.logsToStderr = logsToStderr;
 	}
 
 	public boolean isErrorsToStderr() {

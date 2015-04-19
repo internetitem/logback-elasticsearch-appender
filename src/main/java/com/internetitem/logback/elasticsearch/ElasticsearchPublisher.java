@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
 import com.internetitem.logback.elasticsearch.config.Property;
 import com.internetitem.logback.elasticsearch.config.Settings;
+import com.internetitem.logback.elasticsearch.util.ErrorReporter;
+import com.internetitem.logback.elasticsearch.util.PropertyAndEncoder;
 import com.internetitem.logback.elasticsearch.writer.ElasticsearchWriter;
 import com.internetitem.logback.elasticsearch.writer.LoggerWriter;
 import com.internetitem.logback.elasticsearch.writer.StdErrWriter;
@@ -23,7 +25,7 @@ public class ElasticsearchPublisher implements Runnable {
 	public static final String THREAD_NAME = "es-writer";
 
 	private volatile List<ILoggingEvent> events;
-	private ElasticsearchOutputAggregator spigot;
+	private ElasticsearchOutputAggregator outputAggregator;
 	private List<PropertyAndEncoder> propertyList;
 
 	private String indexString;
@@ -45,20 +47,20 @@ public class ElasticsearchPublisher implements Runnable {
 		this.lock = new Object();
 		this.settings = settings;
 
-		this.spigot = configureSpigot(settings, errorReporter);
+		this.outputAggregator = configureOutputAggregator(settings, errorReporter);
 
 		this.jf = new JsonFactory();
 		this.jf.setRootValueSeparator(null);
-		this.jsonGenerator = jf.createGenerator(spigot);
+		this.jsonGenerator = jf.createGenerator(outputAggregator);
 
 		this.indexString = generateIndexString(jf, settings.getIndex(), settings.getType());
 		this.propertyList = generatePropertyList(context, properties);
 	}
 
-	private static ElasticsearchOutputAggregator configureSpigot(Settings settings, ErrorReporter errorReporter) throws IOException {
+	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter) throws IOException {
 		ElasticsearchOutputAggregator spigot = new ElasticsearchOutputAggregator(settings, errorReporter);
 
-		if (settings.isErrorsToStderr()) {
+		if (settings.isLogsToStderr()) {
 			spigot.addWriter(new StdErrWriter());
 		}
 
@@ -128,7 +130,7 @@ public class ElasticsearchPublisher implements Runnable {
 					}
 
 					if (eventsCopy == null) {
-						if (!spigot.hasPendingData()) {
+						if (!outputAggregator.hasPendingData()) {
 							// all done
 							working = false;
 							return;
@@ -147,7 +149,7 @@ public class ElasticsearchPublisher implements Runnable {
 					serializeEvents(jsonGenerator, indexString, eventsCopy, propertyList);
 				}
 
-				if (!spigot.sendData()) {
+				if (!outputAggregator.sendData()) {
 					currentTry++;
 				}
 			} catch (Exception e) {

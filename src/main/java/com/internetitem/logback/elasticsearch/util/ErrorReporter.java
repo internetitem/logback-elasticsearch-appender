@@ -1,4 +1,4 @@
-package com.internetitem.logback.elasticsearch;
+package com.internetitem.logback.elasticsearch.util;
 
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.spi.ContextAwareBase;

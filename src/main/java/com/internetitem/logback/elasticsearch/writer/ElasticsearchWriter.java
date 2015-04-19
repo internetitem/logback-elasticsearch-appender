@@ -1,6 +1,6 @@
 package com.internetitem.logback.elasticsearch.writer;
 
-import com.internetitem.logback.elasticsearch.ErrorReporter;
+import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 import com.internetitem.logback.elasticsearch.config.Settings;
 
 import java.io.*;
