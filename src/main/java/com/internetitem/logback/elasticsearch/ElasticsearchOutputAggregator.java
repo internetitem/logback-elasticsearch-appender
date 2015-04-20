@@ -42,6 +42,10 @@ public class ElasticsearchOutputAggregator extends Writer {
 		return false;
 	}
 
+	public boolean hasOutputs() {
+		return !writers.isEmpty();
+	}
+
 	public boolean sendData() {
 		boolean success = true;
 		for (SafeWriter writer : writers) {

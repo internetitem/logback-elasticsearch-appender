@@ -104,6 +104,10 @@ public class ElasticsearchPublisher implements Runnable {
 
 
 	public void addEvent(ILoggingEvent event) {
+		if (!outputAggregator.hasOutputs()) {
+			return;
+		}
+
 		synchronized (lock) {
 			events.add(event);
 			if (!working) {
