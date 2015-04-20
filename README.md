@@ -16,6 +16,7 @@ In your logback.xml:
             <index>indexname</index>
             <type>tester</type>
             <loggerName>es-logger</loggerName>
+            <errorLoggerName>es-error-logger</errorLoggerName>
             <properties>
                 <property>
                     <name>host</name>
@@ -41,13 +42,24 @@ In your logback.xml:
             </properties>
         </appender>
         
+        <root level="info">
+            <appender-ref ref="FILELOGGER" />
+            <appender-ref ref="ELASTIC" />
+        </root>
+    
+        <logger name="es-error-logger" level="INFO" additivity="false">
+            <appender-ref ref="FILELOGGER" />
+        </logger>
+    
         <logger name="es-logger" level="INFO" additivity="false">
-            <appender name="ES_RAW" class="ch.qos.logback.core.ConsoleAppender">
+            <appender name="ES_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <!-- ... -->
                 <encoder>
-                    <pattern>%msg</pattern>
+                    <pattern>%msg</pattern> <!-- This pattern is important, otherwise it won't be the raw Elasticsearch format anyomre -->
                 </encoder>
             </appender>
         </logger>
+
 
 
 Configuration Reference
