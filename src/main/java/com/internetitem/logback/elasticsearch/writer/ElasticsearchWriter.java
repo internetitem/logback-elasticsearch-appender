@@ -31,7 +31,7 @@ public class ElasticsearchWriter implements SafeWriter {
 		sendBuffer.append(cbuf, off, len);
 
 		if (sendBuffer.length() >= settings.getMaxQueueSize()) {
-			errorReporter.addWarn("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
+			errorReporter.logWarning("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
 			bufferExceeded = true;
 		}
 	}
@@ -65,7 +65,7 @@ public class ElasticsearchWriter implements SafeWriter {
 
 		sendBuffer.setLength(0);
 		if (bufferExceeded) {
-			errorReporter.addInfo("Send queue cleared - log messages will no longer be lost");
+			errorReporter.logInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
 		}
 	}

@@ -9,6 +9,7 @@ public class Settings {
 	private URL url;
 
 	private String loggerName;
+	private String errorLoggerName;
 
 	private int sleepTime = 250;
 	private int maxRetries = 3;
@@ -116,5 +117,13 @@ public class Settings {
 
 	public void setUrl(URL url) {
 		this.url = url;
+	}
+
+	public String getErrorLoggerName() {
+		return errorLoggerName;
+	}
+
+	public void setErrorLoggerName(String errorLoggerName) {
+		this.errorLoggerName = errorLoggerName;
 	}
 }

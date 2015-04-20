@@ -157,7 +157,7 @@ public class ElasticsearchPublisher implements Runnable {
 					currentTry++;
 				}
 			} catch (Exception e) {
-				errorReporter.addError("Internal error handling log data: " + e.getMessage(), e);
+				errorReporter.logError("Internal error handling log data: " + e.getMessage(), e);
 				currentTry++;
 			}
 		}

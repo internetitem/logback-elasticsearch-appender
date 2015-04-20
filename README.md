@@ -65,6 +65,7 @@ Configuration Reference
  * `logsToStderr` (optional, default false): If set to `true`, dump the raw Elasticsearch messages to stderr
  * `maxQueueSize` (optional, default 104,857,600 = 200MB): Maximum size (in characters) of the send buffer. After this point, *logs will be dropped*. This should only happen if Elasticsearch is down, but this is a self-protection mechanism to ensure that the logging system doesn't cause the main process to run out of memory. Note that this maximum is approximate; once the maximum is hit, no new logs will be accepted until it shrinks, but any logs already accepted to be processed will still be added to the buffer
  * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
+ * `errorLoggerName` (optional): If set, any internal errors or problems will be logged to this logger
 
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
