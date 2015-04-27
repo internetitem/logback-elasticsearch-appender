@@ -25,14 +25,23 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void start() {
 		super.start();
 		try {
-			this.errorReporter = new ErrorReporter(settings, getContext());
-			this.publisher = new ElasticsearchPublisher(getContext(), errorReporter, settings, properties);
+			this.errorReporter = getErrorReporter();
+			this.publisher = getElasticsearchPublisher();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	@Override
+    protected ErrorReporter getErrorReporter() {
+        return new ErrorReporter(settings, getContext());
+    }
+
+    //VisibleForTesting
+    protected ElasticsearchPublisher getElasticsearchPublisher() throws IOException {
+        return new ElasticsearchPublisher(getContext(), errorReporter, settings, properties);
+    }
+
+    @Override
 	public void stop() {
 		super.stop();
 	}
@@ -115,4 +124,6 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void setErrorLoggerName(String logger) {
 		settings.setErrorLoggerName(logger);
 	}
+
+
 }
