@@ -13,13 +13,17 @@ import java.net.URL;
 public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
 	private Settings settings;
-	private ElasticsearchProperties properties;
+	private ElasticsearchProperties elasticsearchProperties;
 	private ElasticsearchPublisher publisher;
 	private ErrorReporter errorReporter;
 
 	public ElasticsearchAppender() {
 		this.settings = new Settings();
 	}
+
+    public ElasticsearchAppender(Settings settings) {
+        this.settings = settings;
+    }
 
 	@Override
 	public void start() {
@@ -32,13 +36,14 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		}
 	}
 
+    //VisibleForTesting
     protected ErrorReporter getErrorReporter() {
         return new ErrorReporter(settings, getContext());
     }
 
     //VisibleForTesting
     protected ElasticsearchPublisher getElasticsearchPublisher() throws IOException {
-        return new ElasticsearchPublisher(getContext(), errorReporter, settings, properties);
+        return new ElasticsearchPublisher(getContext(), errorReporter, settings, elasticsearchProperties);
     }
 
     @Override
@@ -69,8 +74,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		publisher.addEvent(eventObject);
 	}
 
-	public void setProperties(ElasticsearchProperties properties) {
-		this.properties = properties;
+	public void setProperties(ElasticsearchProperties elasticsearchProperties) {
+		this.elasticsearchProperties = elasticsearchProperties;
 	}
 
 	public void setSleepTime(int sleepTime) {
