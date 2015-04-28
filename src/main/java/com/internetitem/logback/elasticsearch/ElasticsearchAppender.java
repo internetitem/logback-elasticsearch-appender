@@ -28,8 +28,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	@Override
 	public void start() {
 		super.start();
-		try {
-			this.errorReporter = getErrorReporter();
+        this.errorReporter = getErrorReporter();
+        try {
 			this.publisher = getElasticsearchPublisher();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -57,12 +57,12 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		String targetLogger = eventObject.getLoggerName();
 
 		String loggerName = settings.getLoggerName();
-		if (loggerName != null && targetLogger.equals(loggerName)) {
+		if (loggerName != null && loggerName.equals(targetLogger)) {
 			return;
 		}
 
 		String errorLoggerName = settings.getErrorLoggerName();
-		if (errorLoggerName != null && targetLogger.equals(errorLoggerName)) {
+		if (errorLoggerName != null && errorLoggerName.equals(targetLogger)) {
 			return;
 		}
 

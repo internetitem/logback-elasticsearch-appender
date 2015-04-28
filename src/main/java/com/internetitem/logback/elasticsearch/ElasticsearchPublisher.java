@@ -57,7 +57,7 @@ public class ElasticsearchPublisher implements Runnable {
 		this.propertyList = generatePropertyList(context, properties);
 	}
 
-	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter) throws IOException {
+	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter)  {
 		ElasticsearchOutputAggregator spigot = new ElasticsearchOutputAggregator(settings, errorReporter);
 
 		if (settings.isLogsToStderr()) {
