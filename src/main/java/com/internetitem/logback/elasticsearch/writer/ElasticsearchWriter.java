@@ -16,7 +16,7 @@ public class ElasticsearchWriter implements SafeWriter {
 
 	private boolean bufferExceeded;
 
-	public ElasticsearchWriter(ErrorReporter errorReporter, Settings settings) throws IOException {
+	public ElasticsearchWriter(ErrorReporter errorReporter, Settings settings) {
 		this.errorReporter = errorReporter;
 		this.settings = settings;
 

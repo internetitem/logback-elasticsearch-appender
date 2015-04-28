@@ -13,7 +13,7 @@ import java.net.URL;
 public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
 	private Settings settings;
-	private ElasticsearchProperties properties;
+	private ElasticsearchProperties elasticsearchProperties;
 	private ElasticsearchPublisher publisher;
 	private ErrorReporter errorReporter;
 
@@ -21,18 +21,32 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		this.settings = new Settings();
 	}
 
+    public ElasticsearchAppender(Settings settings) {
+        this.settings = settings;
+    }
+
 	@Override
 	public void start() {
 		super.start();
-		try {
-			this.errorReporter = new ErrorReporter(settings, getContext());
-			this.publisher = new ElasticsearchPublisher(getContext(), errorReporter, settings, properties);
+        this.errorReporter = getErrorReporter();
+        try {
+			this.publisher = getElasticsearchPublisher();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	@Override
+    //VisibleForTesting
+    protected ErrorReporter getErrorReporter() {
+        return new ErrorReporter(settings, getContext());
+    }
+
+    //VisibleForTesting
+    protected ElasticsearchPublisher getElasticsearchPublisher() throws IOException {
+        return new ElasticsearchPublisher(getContext(), errorReporter, settings, elasticsearchProperties);
+    }
+
+    @Override
 	public void stop() {
 		super.stop();
 	}
@@ -43,12 +57,12 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		String targetLogger = eventObject.getLoggerName();
 
 		String loggerName = settings.getLoggerName();
-		if (loggerName != null && targetLogger.equals(loggerName)) {
+		if (loggerName != null && loggerName.equals(targetLogger)) {
 			return;
 		}
 
 		String errorLoggerName = settings.getErrorLoggerName();
-		if (errorLoggerName != null && targetLogger.equals(errorLoggerName)) {
+		if (errorLoggerName != null && errorLoggerName.equals(targetLogger)) {
 			return;
 		}
 
@@ -60,8 +74,8 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 		publisher.addEvent(eventObject);
 	}
 
-	public void setProperties(ElasticsearchProperties properties) {
-		this.properties = properties;
+	public void setProperties(ElasticsearchProperties elasticsearchProperties) {
+		this.elasticsearchProperties = elasticsearchProperties;
 	}
 
 	public void setSleepTime(int sleepTime) {
@@ -115,4 +129,6 @@ public class ElasticsearchAppender extends UnsynchronizedAppenderBase<ILoggingEv
 	public void setErrorLoggerName(String logger) {
 		settings.setErrorLoggerName(logger);
 	}
+
+
 }
