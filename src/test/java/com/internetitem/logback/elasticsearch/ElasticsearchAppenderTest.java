@@ -170,7 +170,7 @@ public class ElasticsearchAppenderTest {
 
 
     @Test
-    public void should_delegate_setIncludeCallerData_to_settings() throws MalformedURLException {
+    public void should_delegate_setters_to_settings() throws MalformedURLException {
         ElasticsearchAppender appender = new ElasticsearchAppender(settings);
         boolean includeCallerData = false;
         boolean errorsToStderr = false;
