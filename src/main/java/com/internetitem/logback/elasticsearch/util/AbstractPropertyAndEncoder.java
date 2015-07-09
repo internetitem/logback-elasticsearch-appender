@@ -1,25 +1,26 @@
 package com.internetitem.logback.elasticsearch.util;
 
-import ch.qos.logback.classic.PatternLayout;
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Context;
+import ch.qos.logback.core.pattern.PatternLayoutBase;
 import com.internetitem.logback.elasticsearch.config.Property;
 
-public class PropertyAndEncoder {
+public abstract class AbstractPropertyAndEncoder<T> {
 	private Property property;
-	private PatternLayout layout;
+	private PatternLayoutBase<T> layout;
 
-	public PropertyAndEncoder(Property property, Context context) {
+	public AbstractPropertyAndEncoder(Property property, Context context) {
 		this.property = property;
 
-		this.layout = new PatternLayout();
+		this.layout = getLayout();
 		this.layout.setContext(context);
 		this.layout.setPattern(property.getValue());
 		this.layout.setPostCompileProcessor(null);
 		this.layout.start();
 	}
 
-	public String encode(ILoggingEvent event) {
+	protected abstract PatternLayoutBase<T> getLayout();
+
+	public String encode(T event) {
 		return layout.doLayout(event);
 	}
 

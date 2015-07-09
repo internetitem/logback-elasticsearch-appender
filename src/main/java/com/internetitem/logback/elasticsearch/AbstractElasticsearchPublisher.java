@@ -1,14 +1,13 @@
 package com.internetitem.logback.elasticsearch;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Context;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
 import com.internetitem.logback.elasticsearch.config.Property;
 import com.internetitem.logback.elasticsearch.config.Settings;
+import com.internetitem.logback.elasticsearch.util.AbstractPropertyAndEncoder;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
-import com.internetitem.logback.elasticsearch.util.PropertyAndEncoder;
 import com.internetitem.logback.elasticsearch.writer.ElasticsearchWriter;
 import com.internetitem.logback.elasticsearch.writer.LoggerWriter;
 import com.internetitem.logback.elasticsearch.writer.StdErrWriter;
@@ -19,14 +18,17 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class ElasticsearchPublisher implements Runnable {
+public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
-	public static final String THREAD_NAME = "es-writer";
+	private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(1);
 
-	private volatile List<ILoggingEvent> events;
+	public static final String THREAD_NAME_PREFIX = "es-writer-";
+
+	private volatile List<T> events;
 	private ElasticsearchOutputAggregator outputAggregator;
-	private List<PropertyAndEncoder> propertyList;
+	private List<AbstractPropertyAndEncoder<T>> propertyList;
 
 	private String indexString;
 	private JsonFactory jf;
@@ -41,9 +43,9 @@ public class ElasticsearchPublisher implements Runnable {
 	private volatile boolean working;
 
 
-	public ElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties) throws IOException {
+	public AbstractElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties) throws IOException {
 		this.errorReporter = errorReporter;
-		this.events = new ArrayList<ILoggingEvent>();
+		this.events = new ArrayList<T>();
 		this.lock = new Object();
 		this.settings = settings;
 
@@ -75,15 +77,17 @@ public class ElasticsearchPublisher implements Runnable {
 		return spigot;
 	}
 
-	private static List<PropertyAndEncoder> generatePropertyList(Context context, ElasticsearchProperties properties) {
-		List<PropertyAndEncoder> list = new ArrayList<PropertyAndEncoder>();
+	private List<AbstractPropertyAndEncoder<T>> generatePropertyList(Context context, ElasticsearchProperties properties) {
+		List<AbstractPropertyAndEncoder<T>> list = new ArrayList<AbstractPropertyAndEncoder<T>>();
 		if (properties != null) {
 			for (Property property : properties.getProperties()) {
-				list.add(new PropertyAndEncoder(property, context));
+				list.add(buildPropertyAndEncoder(context, property));
 			}
 		}
 		return list;
 	}
+
+	protected abstract AbstractPropertyAndEncoder<T> buildPropertyAndEncoder(Context context, Property property);
 
 
 	private static String generateIndexString(JsonFactory jf, String index, String type) throws IOException {
@@ -103,7 +107,7 @@ public class ElasticsearchPublisher implements Runnable {
 	}
 
 
-	public void addEvent(ILoggingEvent event) {
+	public void addEvent(T event) {
 		if (!outputAggregator.hasOutputs()) {
 			return;
 		}
@@ -112,7 +116,7 @@ public class ElasticsearchPublisher implements Runnable {
 			events.add(event);
 			if (!working) {
 				working = true;
-				Thread thread = new Thread(this, THREAD_NAME);
+				Thread thread = new Thread(this, THREAD_NAME_PREFIX + THREAD_COUNTER.getAndIncrement());
 				thread.start();
 			}
 		}
@@ -125,11 +129,11 @@ public class ElasticsearchPublisher implements Runnable {
 			try {
 				Thread.sleep(settings.getSleepTime());
 
-				List<ILoggingEvent> eventsCopy = null;
+				List<T> eventsCopy = null;
 				synchronized (lock) {
 					if (!events.isEmpty()) {
 						eventsCopy = events;
-						events = new ArrayList<ILoggingEvent>();
+						events = new ArrayList<T>();
 						currentTry = 1;
 					}
 
@@ -164,8 +168,8 @@ public class ElasticsearchPublisher implements Runnable {
 	}
 
 
-	private static void serializeEvents(JsonGenerator gen, String indexString, List<ILoggingEvent> eventsCopy, List<PropertyAndEncoder> propertyList) throws IOException {
-		for (ILoggingEvent event : eventsCopy) {
+	private void serializeEvents(JsonGenerator gen, String indexString, List<T> eventsCopy, List<AbstractPropertyAndEncoder<T>> propertyList) throws IOException {
+		for (T event : eventsCopy) {
 			gen.writeRaw(indexString);
 			serializeEvent(gen, event, propertyList);
 			gen.writeRaw('\n');
@@ -173,13 +177,12 @@ public class ElasticsearchPublisher implements Runnable {
 		gen.flush();
 	}
 
-	private static void serializeEvent(JsonGenerator gen, ILoggingEvent event, List<PropertyAndEncoder> propertyList) throws IOException {
+	private void serializeEvent(JsonGenerator gen, T event, List<AbstractPropertyAndEncoder<T>> propertyList) throws IOException {
 		gen.writeStartObject();
 
-		gen.writeObjectField("@timestamp", getTimestamp(event.getTimeStamp()));
-		gen.writeObjectField("message", event.getMessage());
+		serializeCommonFields(gen, event);
 
-		for (PropertyAndEncoder pae : propertyList) {
+		for (AbstractPropertyAndEncoder pae : propertyList) {
 			String value = pae.encode(event);
 			if (pae.allowEmpty() || (value != null && !value.isEmpty())) {
 				gen.writeObjectField(pae.getName(), value);
@@ -189,7 +192,9 @@ public class ElasticsearchPublisher implements Runnable {
 		gen.writeEndObject();
 	}
 
-	private static String getTimestamp(long timestamp) {
+	protected abstract void serializeCommonFields(JsonGenerator gen, T event) throws IOException;
+
+	protected static String getTimestamp(long timestamp) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(timestamp);
 		return DatatypeConverter.printDateTime(cal);

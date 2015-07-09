@@ -27,7 +27,7 @@ public class ElasticsearchAppenderTest {
 
 
     @Mock
-    private ElasticsearchPublisher elasticsearchPublisher;
+    private ClassicElasticsearchPublisher elasticsearchPublisher;
     @Mock
     private ErrorReporter errorReporter;
     @Mock
@@ -39,14 +39,14 @@ public class ElasticsearchAppenderTest {
 
     private boolean publisherSet = false;
     private boolean errorReporterSet = false;
-    private ElasticsearchAppender appender;
+    private AbstractElasticsearchAppender appender;
 
     @Before
     public void setUp() {
 
         appender = new ElasticsearchAppender() {
             @Override
-            protected ElasticsearchPublisher getElasticsearchPublisher() throws IOException {
+            protected ClassicElasticsearchPublisher buildElasticsearchPublisher() throws IOException {
                 publisherSet = true;
                 return elasticsearchPublisher;
             }
@@ -72,7 +72,7 @@ public class ElasticsearchAppenderTest {
     public void should_throw_error_when_publisher_setup_fails_during_startup() {
         ElasticsearchAppender appender = new ElasticsearchAppender() {
             @Override
-            protected ElasticsearchPublisher getElasticsearchPublisher() throws IOException {
+            protected ClassicElasticsearchPublisher buildElasticsearchPublisher() throws IOException {
                 throw new IOException("Failed to start Publisher");
             }
         };
