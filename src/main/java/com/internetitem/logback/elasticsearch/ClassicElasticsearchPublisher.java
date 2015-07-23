@@ -26,6 +26,6 @@ public class ClassicElasticsearchPublisher extends AbstractElasticsearchPublishe
 	@Override
 	protected void serializeCommonFields(JsonGenerator gen, ILoggingEvent event) throws IOException {
 		gen.writeObjectField("@timestamp", getTimestamp(event.getTimeStamp()));
-		gen.writeObjectField("message", event.getMessage());
+		gen.writeObjectField("message", event.getFormattedMessage());
 	}
 }
