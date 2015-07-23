@@ -11,14 +11,30 @@ Usage
 =====
 Include slf4j and logback as usual.
 
-In your logback.xml:
+In your `pom.xml` (or equivalent), add:
+ 
+     <dependency>
+        <groupId>com.internetitem</groupId>
+        <artifactId>logback-elasticsearch-appender</artifactId>
+        <version>1.1</version>
+     </dependency>
+
+In your `logback.xml`:
 
         <appender name="ELASTIC" class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
             <url>http://yourserver/_bulk</url>
             <index>indexname</index>
             <type>tester</type>
-            <loggerName>es-logger</loggerName>
-            <errorLoggerName>es-error-logger</errorLoggerName>
+            <loggerName>es-logger</loggerName> <!-- optional -->
+            <errorLoggerName>es-error-logger</errorLoggerName> <!-- optional -->
+            <connectTimeout>30000</connectTimeout> <!-- optional (in ms, default 30000) -->
+            <errorsToStdErr>false</errorsToStdErr> <!-- optional (default false) -->
+            <includeCallerData>false</includeCallerData> <!-- optional (default false) -->
+            <logsToStdErr>false</logsToStdErr> <!-- optional (default false) -->
+            <maxQueueSize>104857600</maxQueueSize> <!-- optional (default 104857600) -->
+            <maxRetries>3</maxRetries> <!-- optional (default 3) -->
+            <readTimeout>30000</readTimeout> <!-- optional (in ms, default 30000) -->
+            <sleepTime>250</sleepTime> <!-- optional (in ms, default 250) -->
             <properties>
                 <property>
                     <name>host</name>
@@ -87,4 +103,11 @@ The fields `@timestamp` and `message` are always sent and can not currently be c
  * `value` (required): Text string to be sent. Internally, the value is populated using a Logback PatternLayout, so all [Conversion Words](http://logback.qos.ch/manual/layouts.html#conversionWord) can be used (in addition to the standard static variable interpolations like `${HOSTNAME}`).
  * `allowEmpty` (optional, default `false`): Normally, if the `value` results in a `null` or empty string, the field will not be sent. If `allowEmpty` is set to `true` then the field will be sent regardless
 
- 
+Logback Access
+==============
+
+Included is also an Elasticsearch appender for Logback Access. The configuration is almost identical, with the following two differences:
+
+ * The Appender class name is `com.internetitem.logback.elasticsearch.ElasticsearchAccessAppender`
+ * The `value` for each `property` uses the [Logback Access conversion words](http://logback.qos.ch/manual/layouts.html#logback-access).
+
