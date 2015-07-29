@@ -16,14 +16,14 @@ In your `pom.xml` (or equivalent), add:
      <dependency>
         <groupId>com.internetitem</groupId>
         <artifactId>logback-elasticsearch-appender</artifactId>
-        <version>1.1</version>
+        <version>1.2</version>
      </dependency>
 
 In your `logback.xml`:
 
         <appender name="ELASTIC" class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
             <url>http://yourserver/_bulk</url>
-            <index>indexname</index>
+            <index>logs-%date{yyyy-MM-dd}</index>
             <type>tester</type>
             <loggerName>es-logger</loggerName> <!-- optional -->
             <errorLoggerName>es-error-logger</errorLoggerName> <!-- optional -->
@@ -84,7 +84,7 @@ Configuration Reference
 =======================
 
  * `url` (required): The URL to your Elasticsearch bulk API endpoint
- * `index` (required): Name if the index to publish to
+ * `index` (required): Name if the index to publish to (populated using PatternLayout just like individual properties - see below)
  * `type` (optional): Elasticsearch `_type` field for records
  * `sleepTime` (optional, default 250): Time (in ms) to sleep between attempts at delivering a message
  * `maxRetries` (optional, default 3): Number of times to attempt retrying a message on failure. Note that subsequent log messages reset the retry count to 0. This value is important if your program is about to exit (i.e. it is not producing any more log lines) but is unable to deliver some messages to ES

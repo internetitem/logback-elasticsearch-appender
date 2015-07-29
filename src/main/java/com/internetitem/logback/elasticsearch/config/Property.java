@@ -5,6 +5,15 @@ public class Property {
 	private String value;
 	private boolean allowEmpty;
 
+	public Property() {
+	}
+
+	public Property(String name, String value, boolean allowEmpty) {
+		this.name = name;
+		this.value = value;
+		this.allowEmpty = allowEmpty;
+	}
+
 	public String getName() {
 		return name;
 	}

@@ -14,7 +14,6 @@ import com.internetitem.logback.elasticsearch.writer.StdErrWriter;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -30,7 +29,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	private ElasticsearchOutputAggregator outputAggregator;
 	private List<AbstractPropertyAndEncoder<T>> propertyList;
 
-	private String indexString;
+	private AbstractPropertyAndEncoder<T> indexPattern;
 	private JsonFactory jf;
 	private JsonGenerator jsonGenerator;
 
@@ -38,7 +37,6 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	private Settings settings;
 
 	private final Object lock;
-
 
 	private volatile boolean working;
 
@@ -55,7 +53,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		this.jf.setRootValueSeparator(null);
 		this.jsonGenerator = jf.createGenerator(outputAggregator);
 
-		this.indexString = generateIndexString(jf, settings.getIndex(), settings.getType());
+		this.indexPattern = buildPropertyAndEncoder(context, new Property("<index>", settings.getIndex(), false));
 		this.propertyList = generatePropertyList(context, properties);
 	}
 
@@ -88,24 +86,6 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	}
 
 	protected abstract AbstractPropertyAndEncoder<T> buildPropertyAndEncoder(Context context, Property property);
-
-
-	private static String generateIndexString(JsonFactory jf, String index, String type) throws IOException {
-		StringWriter writer = new StringWriter();
-		JsonGenerator gen = jf.createGenerator(writer);
-		gen.writeStartObject();
-		gen.writeObjectFieldStart("index");
-		gen.writeObjectField("_index", index);
-		if (type != null) {
-			gen.writeObjectField("_type", type);
-		}
-		gen.writeEndObject();
-		gen.writeEndObject();
-		gen.writeRaw('\n');
-		gen.close();
-		return writer.toString();
-	}
-
 
 	public void addEvent(T event) {
 		if (!outputAggregator.hasOutputs()) {
@@ -154,7 +134,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 				}
 
 				if (eventsCopy != null) {
-					serializeEvents(jsonGenerator, indexString, eventsCopy, propertyList);
+					serializeEvents(jsonGenerator, eventsCopy, propertyList);
 				}
 
 				if (!outputAggregator.sendData()) {
@@ -168,13 +148,26 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	}
 
 
-	private void serializeEvents(JsonGenerator gen, String indexString, List<T> eventsCopy, List<AbstractPropertyAndEncoder<T>> propertyList) throws IOException {
+	private void serializeEvents(JsonGenerator gen, List<T> eventsCopy, List<AbstractPropertyAndEncoder<T>> propertyList) throws IOException {
 		for (T event : eventsCopy) {
-			gen.writeRaw(indexString);
+			serializeIndexString(gen, event);
+			gen.writeRaw('\n');
 			serializeEvent(gen, event, propertyList);
 			gen.writeRaw('\n');
 		}
 		gen.flush();
+	}
+
+	private void serializeIndexString(JsonGenerator gen, T event) throws IOException {
+		gen.writeStartObject();
+			gen.writeObjectFieldStart("index");
+				gen.writeObjectField("_index", indexPattern.encode(event));
+				String type = settings.getType();
+				if (type != null) {
+					gen.writeObjectField("_type", type);
+				}
+			gen.writeEndObject();
+		gen.writeEndObject();
 	}
 
 	private void serializeEvent(JsonGenerator gen, T event, List<AbstractPropertyAndEncoder<T>> propertyList) throws IOException {
@@ -182,7 +175,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 		serializeCommonFields(gen, event);
 
-		for (AbstractPropertyAndEncoder pae : propertyList) {
+		for (AbstractPropertyAndEncoder<T> pae : propertyList) {
 			String value = pae.encode(event);
 			if (pae.allowEmpty() || (value != null && !value.isEmpty())) {
 				gen.writeObjectField(pae.getName(), value);
