@@ -1,10 +1,18 @@
 package com.internetitem.logback.elasticsearch.writer;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.util.Collection;
+import java.util.Collections;
+
+import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
+import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
-
-import java.io.*;
-import java.net.HttpURLConnection;
 
 public class ElasticsearchWriter implements SafeWriter {
 
@@ -12,13 +20,16 @@ public class ElasticsearchWriter implements SafeWriter {
 
 	private ErrorReporter errorReporter;
 	private Settings settings;
-
+	private Collection<HttpRequestHeader> headerList;
 
 	private boolean bufferExceeded;
 
-	public ElasticsearchWriter(ErrorReporter errorReporter, Settings settings) {
+	public ElasticsearchWriter(ErrorReporter errorReporter, Settings settings, HttpRequestHeaders headers) {
 		this.errorReporter = errorReporter;
 		this.settings = settings;
+		this.headerList = headers != null && headers.getHeaders() != null
+			? headers.getHeaders()
+			: Collections.<HttpRequestHeader>emptyList();
 
 		this.sendBuffer = new StringBuilder();
 	}
@@ -49,6 +60,11 @@ public class ElasticsearchWriter implements SafeWriter {
 			urlConnection.setConnectTimeout(settings.getConnectTimeout());
 			urlConnection.setRequestMethod("POST");
 
+			if (!headerList.isEmpty()) {
+				for(HttpRequestHeader header: headerList) {
+					urlConnection.setRequestProperty(header.getName(), header.getValue());
+				}
+			}
 			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
 			writer.write(sendBuffer.toString());
 			writer.flush();
