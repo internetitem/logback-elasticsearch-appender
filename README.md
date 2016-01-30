@@ -58,6 +58,12 @@ In your `logback.xml`:
                     <value>%logger</value>
                 </property>
             </properties>
+            <headers>
+                <header>
+                    <name>Content-Type</name>
+                    <value>text/plain</value>
+                </header>
+            </headers>
         </appender>
         
         <root level="info">
