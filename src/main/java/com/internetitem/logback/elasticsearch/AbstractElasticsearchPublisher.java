@@ -1,9 +1,18 @@
 package com.internetitem.logback.elasticsearch;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.xml.bind.DatatypeConverter;
+
 import ch.qos.logback.core.Context;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
+import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Property;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.AbstractPropertyAndEncoder;
@@ -11,13 +20,6 @@ import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 import com.internetitem.logback.elasticsearch.writer.ElasticsearchWriter;
 import com.internetitem.logback.elasticsearch.writer.LoggerWriter;
 import com.internetitem.logback.elasticsearch.writer.StdErrWriter;
-
-import javax.xml.bind.DatatypeConverter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
@@ -41,13 +43,13 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	private volatile boolean working;
 
 
-	public AbstractElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties) throws IOException {
+	public AbstractElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties, HttpRequestHeaders headers) throws IOException {
 		this.errorReporter = errorReporter;
 		this.events = new ArrayList<T>();
 		this.lock = new Object();
 		this.settings = settings;
 
-		this.outputAggregator = configureOutputAggregator(settings, errorReporter);
+		this.outputAggregator = configureOutputAggregator(settings, errorReporter, headers);
 
 		this.jf = new JsonFactory();
 		this.jf.setRootValueSeparator(null);
@@ -57,7 +59,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		this.propertyList = generatePropertyList(context, properties);
 	}
 
-	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter)  {
+	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter, HttpRequestHeaders httpRequestHeaders)  {
 		ElasticsearchOutputAggregator spigot = new ElasticsearchOutputAggregator(settings, errorReporter);
 
 		if (settings.isLogsToStderr()) {
@@ -69,7 +71,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		}
 
 		if (settings.getUrl() != null) {
-			spigot.addWriter(new ElasticsearchWriter(errorReporter, settings));
+			spigot.addWriter(new ElasticsearchWriter(errorReporter, settings, httpRequestHeaders));
 		}
 
 		return spigot;

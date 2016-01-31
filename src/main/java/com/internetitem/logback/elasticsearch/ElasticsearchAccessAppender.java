@@ -1,9 +1,9 @@
 package com.internetitem.logback.elasticsearch;
 
+import java.io.IOException;
+
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.internetitem.logback.elasticsearch.config.Settings;
-
-import java.io.IOException;
 
 public class ElasticsearchAccessAppender extends AbstractElasticsearchAppender<IAccessEvent> {
 
@@ -21,7 +21,7 @@ public class ElasticsearchAccessAppender extends AbstractElasticsearchAppender<I
     }
 
     protected AccessElasticsearchPublisher buildElasticsearchPublisher() throws IOException {
-        return new AccessElasticsearchPublisher(getContext(), errorReporter, settings, elasticsearchProperties);
+        return new AccessElasticsearchPublisher(getContext(), errorReporter, settings, elasticsearchProperties, headers);
     }
 
 

@@ -1,13 +1,14 @@
 package com.internetitem.logback.elasticsearch;
 
-import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
-import com.internetitem.logback.elasticsearch.config.Settings;
-import com.internetitem.logback.elasticsearch.util.ErrorReporter;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
+import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
+import com.internetitem.logback.elasticsearch.config.Settings;
+import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
 public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedAppenderBase<T> {
 
@@ -15,9 +16,11 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
     protected ElasticsearchProperties elasticsearchProperties;
     protected AbstractElasticsearchPublisher<T> publisher;
     protected ErrorReporter errorReporter;
+	protected HttpRequestHeaders headers;
 
 	public AbstractElasticsearchAppender() {
 		this.settings = new Settings();
+		this.headers = new HttpRequestHeaders();
 	}
 
     public AbstractElasticsearchAppender(Settings settings) {
@@ -115,5 +118,8 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
 		settings.setErrorLoggerName(logger);
 	}
 
+	public void setHeaders(HttpRequestHeaders httpRequestHeaders) {
+		this.headers = httpRequestHeaders;
+	}
 
 }
