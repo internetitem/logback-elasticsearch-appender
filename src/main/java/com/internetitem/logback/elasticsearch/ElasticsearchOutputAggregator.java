@@ -51,9 +51,9 @@ public class ElasticsearchOutputAggregator extends Writer {
 		for (SafeWriter writer : writers) {
 			try {
 				writer.sendData();
-			} catch (Exception e) {
+			} catch (IOException e) {
 				success = false;
-				errorReporter.logError("Failed to send events to Elasticsearch: " + e.getMessage(), e);
+				errorReporter.logWarning("Failed to send events to Elasticsearch: " + e.getMessage());
 				if (settings.isErrorsToStderr()) {
 					System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch: " + e.getMessage());
 				}
