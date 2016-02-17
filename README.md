@@ -35,6 +35,7 @@ In your `logback.xml`:
             <maxRetries>3</maxRetries> <!-- optional (default 3) -->
             <readTimeout>30000</readTimeout> <!-- optional (in ms, default 30000) -->
             <sleepTime>250</sleepTime> <!-- optional (in ms, default 250) -->
+            <rawJsonMessage>false</rawJsonMessage> <!-- optional (default false) -->
             <properties>
                 <property>
                     <name>host</name>
@@ -102,6 +103,7 @@ Configuration Reference
  * `maxQueueSize` (optional, default 104,857,600 = 200MB): Maximum size (in characters) of the send buffer. After this point, *logs will be dropped*. This should only happen if Elasticsearch is down, but this is a self-protection mechanism to ensure that the logging system doesn't cause the main process to run out of memory. Note that this maximum is approximate; once the maximum is hit, no new logs will be accepted until it shrinks, but any logs already accepted to be processed will still be added to the buffer
  * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
  * `errorLoggerName` (optional): If set, any internal errors or problems will be logged to this logger
+ * `rawJsonMessage` (optional, default false): If set to `true`, the log message is interpreted as pre-formatted raw JSON message. 
 
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
