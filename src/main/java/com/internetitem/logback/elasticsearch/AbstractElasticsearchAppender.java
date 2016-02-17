@@ -122,4 +122,7 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
 		this.headers = httpRequestHeaders;
 	}
 
+        public void setRawJsonMessage(boolean rawJsonMessage) {
+                settings.setRawJsonMessage(rawJsonMessage);
+        }
 }
