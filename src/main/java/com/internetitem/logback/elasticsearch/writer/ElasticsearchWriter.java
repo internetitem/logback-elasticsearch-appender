@@ -6,6 +6,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -13,6 +16,13 @@ import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 public class ElasticsearchWriter implements SafeWriter {
 
@@ -52,7 +62,27 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
+		HttpURLConnection urlConnection;
+
+		URL url = settings.getUrl();
+
+		if ("https".equals(url.getProtocol().toLowerCase())){
+
+			trustAllHosts();
+
+			HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
+			httpsURLConnection.setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
+			if (url.getUserInfo() != null) {
+				String basicAuth = "Basic " + new String(new Base64().encode(url.getUserInfo().getBytes()));
+				httpsURLConnection.setRequestProperty("Authorization", basicAuth);
+			}
+
+			urlConnection = httpsURLConnection;
+		} else {
+			urlConnection = (HttpURLConnection)(url.openConnection());
+		}
+
 		try {
 			urlConnection.setDoInput(true);
 			urlConnection.setDoOutput(true);
@@ -83,6 +113,36 @@ public class ElasticsearchWriter implements SafeWriter {
 		if (bufferExceeded) {
 			errorReporter.logInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
+		}
+	}
+
+	private static void trustAllHosts() {
+		// Create a trust manager that does not validate certificate chains
+		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager()
+		{
+			public java.security.cert.X509Certificate[] getAcceptedIssuers()
+			{
+				return new java.security.cert.X509Certificate[] {};
+			}
+
+			public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException
+			{
+			}
+
+			public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException
+			{
+			}
+		} };
+
+		// Install the all-trusting trust manager
+		try
+		{
+			SSLContext sc = SSLContext.getInstance("TLS");
+			sc.init(null, trustAllCerts, new java.security.SecureRandom());
+			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+		} catch (Exception e)
+		{
+			e.printStackTrace();
 		}
 	}
 
