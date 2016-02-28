@@ -1,17 +1,5 @@
 package com.internetitem.logback.elasticsearch.writer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Collections;
-
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
@@ -23,6 +11,17 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
 
 public class ElasticsearchWriter implements SafeWriter {
 
@@ -67,20 +66,20 @@ public class ElasticsearchWriter implements SafeWriter {
 		URL url = settings.getUrl();
 
 		if ("https".equals(url.getProtocol().toLowerCase())){
+			// if HTTPS then ignore SSL certificates
 
 			trustAllHosts();
-
 			HttpsURLConnection httpsURLConnection = (HttpsURLConnection) url.openConnection();
 			httpsURLConnection.setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-			if (url.getUserInfo() != null) {
-				String basicAuth = "Basic " + new String(new Base64().encode(url.getUserInfo().getBytes()));
-				httpsURLConnection.setRequestProperty("Authorization", basicAuth);
-			}
-
 			urlConnection = httpsURLConnection;
 		} else {
 			urlConnection = (HttpURLConnection)(url.openConnection());
+		}
+
+		// add basic authentication if present
+		if (url.getUserInfo() != null) {
+			String basicAuth = "Basic " + new String(new Base64().encode(url.getUserInfo().getBytes()));
+			urlConnection.setRequestProperty("Authorization", basicAuth);
 		}
 
 		try {
