@@ -36,7 +36,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	private JsonGenerator jsonGenerator;
 
 	private ErrorReporter errorReporter;
-	private Settings settings;
+	protected Settings settings;
 
 	private final Object lock;
 
