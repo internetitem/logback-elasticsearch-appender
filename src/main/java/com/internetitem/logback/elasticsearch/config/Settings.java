@@ -2,137 +2,297 @@ package com.internetitem.logback.elasticsearch.config;
 
 import java.net.URL;
 
+/**
+ * The Class Settings.
+ */
 public class Settings {
 
-	private String index;
-	private String type;
-	private URL url;
+    /** The index. */
+    private String index;
 
-	private String loggerName;
-	private String errorLoggerName;
+    /** The type. */
+    private String type;
 
-	private int sleepTime = 250;
-	private int maxRetries = 3;
-	private int connectTimeout = 30000;
-	private int readTimeout = 30000;
-	private boolean logsToStderr;
-	private boolean errorsToStderr;
-	private boolean includeCallerData;
-        private boolean rawJsonMessage;
-	private int maxQueueSize = 100 * 1024 * 1024;
+    /** The url. */
+    private URL url;
 
-	public String getIndex() {
-		return index;
+    /** The logger name. */
+    private String loggerName;
+
+    /** The error logger name. */
+    private String errorLoggerName;
+
+    /** The sleep time. */
+    private int sleepTime = 250;
+
+    /** The max retries. */
+    private int maxRetries = 3;
+
+    /** The connect timeout. */
+    private int connectTimeout = 30000;
+
+    /** The read timeout. */
+    private int readTimeout = 30000;
+
+    /** The time to live. */
+    private long timeToLive = 0;
+
+    /** The logs to stderr. */
+    private boolean logsToStderr;
+
+    /** The errors to stderr. */
+    private boolean errorsToStderr;
+
+    /** The include caller data. */
+    private boolean includeCallerData;
+
+    /** The raw json message. */
+    private boolean rawJsonMessage;
+
+    /** The max queue size. */
+    private int maxQueueSize = 100 * 1024 * 1024;
+
+    /**
+     * Gets the index.
+     * @return the index
+     */
+    public String getIndex() {
+	return index;
+    }
+
+    /**
+     * Sets the index.
+     * @param index the new index
+     */
+    public void setIndex(final String index) {
+	this.index = index;
+    }
+
+    /**
+     * Gets the type.
+     * @return the type
+     */
+    public String getType() {
+	return type;
+    }
+
+    /**
+     * Sets the type.
+     * @param type the new type
+     */
+    public void setType(final String type) {
+	this.type = type;
+    }
+
+    /**
+     * Gets the sleep time.
+     * @return the sleep time
+     */
+    public int getSleepTime() {
+	return sleepTime;
+    }
+
+    /**
+     * Sets the sleep time.
+     * @param sleepTime the new sleep time
+     */
+    public void setSleepTime(final int sleepTime) {
+	if (sleepTime < 100) {
+	    this.sleepTime = 100;
+	} else {
+	    this.sleepTime = sleepTime;
 	}
+    }
 
-	public void setIndex(String index) {
-		this.index = index;
-	}
+    /**
+     * Gets the max retries.
+     * @return the max retries
+     */
+    public int getMaxRetries() {
+	return maxRetries;
+    }
 
-	public String getType() {
-		return type;
-	}
+    /**
+     * Sets the max retries.
+     * @param maxRetries the new max retries
+     */
+    public void setMaxRetries(final int maxRetries) {
+	this.maxRetries = maxRetries;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    /**
+     * Gets the connect timeout.
+     * @return the connect timeout
+     */
+    public int getConnectTimeout() {
+	return connectTimeout;
+    }
 
-	public int getSleepTime() {
-		return sleepTime;
-	}
+    /**
+     * Sets the connect timeout.
+     * @param connectTimeout the new connect timeout
+     */
+    public void setConnectTimeout(final int connectTimeout) {
+	this.connectTimeout = connectTimeout;
+    }
 
-	public void setSleepTime(int sleepTime) {
-		if (sleepTime < 100) {
-			sleepTime = 100;
-		}
-		this.sleepTime = sleepTime;
-	}
+    /**
+     * Gets the read timeout.
+     * @return the read timeout
+     */
+    public int getReadTimeout() {
+	return readTimeout;
+    }
 
-	public int getMaxRetries() {
-		return maxRetries;
-	}
+    /**
+     * Sets the read timeout.
+     * @param readTimeout the new read timeout
+     */
+    public void setReadTimeout(final int readTimeout) {
+	this.readTimeout = readTimeout;
+    }
 
-	public void setMaxRetries(int maxRetries) {
-		this.maxRetries = maxRetries;
-	}
+    /**
+     * Checks if is logs to stderr.
+     * @return true, if is logs to stderr
+     */
+    public boolean isLogsToStderr() {
+	return logsToStderr;
+    }
 
-	public int getConnectTimeout() {
-		return connectTimeout;
-	}
+    /**
+     * Sets the logs to stderr.
+     * @param logsToStderr the new logs to stderr
+     */
+    public void setLogsToStderr(final boolean logsToStderr) {
+	this.logsToStderr = logsToStderr;
+    }
 
-	public void setConnectTimeout(int connectTimeout) {
-		this.connectTimeout = connectTimeout;
-	}
+    /**
+     * Checks if is errors to stderr.
+     * @return true, if is errors to stderr
+     */
+    public boolean isErrorsToStderr() {
+	return errorsToStderr;
+    }
 
-	public int getReadTimeout() {
-		return readTimeout;
-	}
+    /**
+     * Sets the errors to stderr.
+     * @param errorsToStderr the new errors to stderr
+     */
+    public void setErrorsToStderr(final boolean errorsToStderr) {
+	this.errorsToStderr = errorsToStderr;
+    }
 
-	public void setReadTimeout(int readTimeout) {
-		this.readTimeout = readTimeout;
-	}
+    /**
+     * Checks if is include caller data.
+     * @return true, if is include caller data
+     */
+    public boolean isIncludeCallerData() {
+	return includeCallerData;
+    }
 
-	public boolean isLogsToStderr() {
-		return logsToStderr;
-	}
+    /**
+     * Sets the include caller data.
+     * @param includeCallerData the new include caller data
+     */
+    public void setIncludeCallerData(final boolean includeCallerData) {
+	this.includeCallerData = includeCallerData;
+    }
 
-	public void setLogsToStderr(boolean logsToStderr) {
-		this.logsToStderr = logsToStderr;
-	}
+    /**
+     * Gets the max queue size.
+     * @return the max queue size
+     */
+    public int getMaxQueueSize() {
+	return maxQueueSize;
+    }
 
-	public boolean isErrorsToStderr() {
-		return errorsToStderr;
-	}
+    /**
+     * Sets the max queue size.
+     * @param maxQueueSize the new max queue size
+     */
+    public void setMaxQueueSize(final int maxQueueSize) {
+	this.maxQueueSize = maxQueueSize;
+    }
 
-	public void setErrorsToStderr(boolean errorsToStderr) {
-		this.errorsToStderr = errorsToStderr;
-	}
+    /**
+     * Gets the logger name.
+     * @return the logger name
+     */
+    public String getLoggerName() {
+	return loggerName;
+    }
 
-	public boolean isIncludeCallerData() {
-		return includeCallerData;
-	}
+    /**
+     * Sets the logger name.
+     * @param loggerName the new logger name
+     */
+    public void setLoggerName(final String loggerName) {
+	this.loggerName = loggerName;
+    }
 
-	public void setIncludeCallerData(boolean includeCallerData) {
-		this.includeCallerData = includeCallerData;
-	}
+    /**
+     * Gets the URL.
+     * @return the URL
+     */
+    public URL getUrl() {
+	return url;
+    }
 
-	public int getMaxQueueSize() {
-		return maxQueueSize;
-	}
+    /**
+     * Sets the URL.
+     * @param url the new URL
+     */
+    public void setUrl(final URL url) {
+	this.url = url;
+    }
 
-	public void setMaxQueueSize(int maxQueueSize) {
-		this.maxQueueSize = maxQueueSize;
-	}
+    /**
+     * Gets the error logger name.
+     * @return the error logger name
+     */
+    public String getErrorLoggerName() {
+	return errorLoggerName;
+    }
 
-	public String getLoggerName() {
-		return loggerName;
-	}
+    /**
+     * Sets the error logger name.
+     * @param errorLoggerName the new error logger name
+     */
+    public void setErrorLoggerName(final String errorLoggerName) {
+	this.errorLoggerName = errorLoggerName;
+    }
 
-	public void setLoggerName(String loggerName) {
-		this.loggerName = loggerName;
-	}
+    /**
+     * Checks if is raw JSON message.
+     * @return true, if is raw JSON message
+     */
+    public boolean isRawJsonMessage() {
+	return rawJsonMessage;
+    }
 
-	public URL getUrl() {
-		return url;
-	}
+    /**
+     * Sets the raw JSON message.
+     * @param rawJsonMessage the new raw JSON message
+     */
+    public void setRawJsonMessage(final boolean rawJsonMessage) {
+	this.rawJsonMessage = rawJsonMessage;
+    }
 
-	public void setUrl(URL url) {
-		this.url = url;
-	}
+    /**
+     * Gets the time to live.
+     * @return the time to live
+     */
+    public long getTimeToLive() {
+	return timeToLive;
+    }
 
-	public String getErrorLoggerName() {
-		return errorLoggerName;
-	}
-
-	public void setErrorLoggerName(String errorLoggerName) {
-		this.errorLoggerName = errorLoggerName;
-	}
-        
-        public boolean isRawJsonMessage() {
-		return rawJsonMessage;
-	}
-
-	public void setRawJsonMessage(boolean rawJsonMessage) {
-		this.rawJsonMessage = rawJsonMessage;
-	}
+    /**
+     * Sets the time to live.
+     * @param timeToLive the new time to live
+     */
+    public void setTimeToLive(final long timeToLive) {
+	this.timeToLive = timeToLive;
+    }
 }
