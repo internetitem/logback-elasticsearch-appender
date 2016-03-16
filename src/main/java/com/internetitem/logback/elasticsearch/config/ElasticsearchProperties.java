@@ -3,20 +3,37 @@ package com.internetitem.logback.elasticsearch.config;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The Class ElasticsearchProperties.
+ */
 public class ElasticsearchProperties {
 
-	private List<Property> properties;
+    /** The properties. */
+    private List<Property> properties;
 
-	public ElasticsearchProperties() {
-		this.properties = new ArrayList<Property>();
-	}
+    /**
+     * Instantiates a new elasticsearch properties.
+     */
+    public ElasticsearchProperties() {
+	this.properties = new ArrayList<Property>();
+    }
 
-	public List<Property> getProperties() {
-		return properties;
-	}
+    /**
+     * Gets the properties.
+     *
+     * @return the properties
+     */
+    public List<Property> getProperties() {
+	return properties;
+    }
 
-	public void addProperty(Property property) {
-		properties.add(property);
-	}
+    /**
+     * Adds the property.
+     *
+     * @param property the property
+     */
+    public void addProperty(Property property) {
+	properties.add(property);
+    }
 
 }

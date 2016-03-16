@@ -10,67 +10,108 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * The Class ElasticsearchOutputAggregator.
+ */
 public class ElasticsearchOutputAggregator extends Writer {
 
-	private Settings settings;
-	private ErrorReporter errorReporter;
-	private List<SafeWriter> writers;
+    /** The settings. */
+    private Settings settings;
 
-	public ElasticsearchOutputAggregator(Settings settings, ErrorReporter errorReporter) {
-		this.writers = new ArrayList<SafeWriter>();
-		this.settings = settings;
-		this.errorReporter = errorReporter;
+    /** The error reporter. */
+    private ErrorReporter errorReporter;
+
+    /** The writers. */
+    private List<SafeWriter> writers;
+
+    /**
+     * Instantiates a new elasticsearch output aggregator.
+     * @param settings the settings
+     * @param errorReporter the error reporter
+     */
+    public ElasticsearchOutputAggregator(Settings settings, ErrorReporter errorReporter) {
+	this.writers = new ArrayList<SafeWriter>();
+	this.settings = settings;
+	this.errorReporter = errorReporter;
+    }
+
+    /**
+     * Adds the writer.
+     * @param writer the writer
+     */
+    public void addWriter(SafeWriter writer) {
+	writers.add(writer);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see java.io.Writer#write(char[], int, int)
+     */
+    @Override
+    public void write(char[] cbuf, int off, int len) throws IOException {
+	for (SafeWriter writer : writers) {
+	    writer.write(cbuf, off, len);
 	}
+    }
 
-	public void addWriter(SafeWriter writer) {
-		writers.add(writer);
+    /**
+     * Checks for pending data.
+     * @return true, if successful
+     */
+    public boolean hasPendingData() {
+	for (SafeWriter writer : writers) {
+	    if (writer.hasPendingData()) {
+		return true;
+	    }
 	}
+	return false;
+    }
 
-	@Override
-	public void write(char[] cbuf, int off, int len) throws IOException {
-		for (SafeWriter writer : writers) {
-			writer.write(cbuf, off, len);
+    /**
+     * Checks for outputs.
+     * @return true, if successful
+     */
+    public boolean hasOutputs() {
+	return !writers.isEmpty();
+    }
+
+    /**
+     * Send data.
+     * @return true, if successful
+     */
+    public boolean sendData() {
+	boolean success = true;
+	for (SafeWriter writer : writers) {
+	    try {
+		writer.sendData();
+	    } catch (IOException e) {
+		success = false;
+		errorReporter.logWarning("Failed to send events to Elasticsearch: " + e.getMessage());
+		if (settings.isErrorsToStderr()) {
+		    System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch: " + e.getMessage());
 		}
-	}
 
-	public boolean hasPendingData() {
-		for (SafeWriter writer : writers) {
-			if (writer.hasPendingData()) {
-				return true;
-			}
-		}
-		return false;
+	    }
 	}
+	return success;
+    }
 
-	public boolean hasOutputs() {
-		return !writers.isEmpty();
-	}
+    /*
+     * (non-Javadoc)
+     * @see java.io.Writer#flush()
+     */
+    @Override
+    public void flush() throws IOException {
+	// No-op
+    }
 
-	public boolean sendData() {
-		boolean success = true;
-		for (SafeWriter writer : writers) {
-			try {
-				writer.sendData();
-			} catch (IOException e) {
-				success = false;
-				errorReporter.logWarning("Failed to send events to Elasticsearch: " + e.getMessage());
-				if (settings.isErrorsToStderr()) {
-					System.err.println("[" + new Date().toString() + "] Failed to send events to Elasticsearch: " + e.getMessage());
-				}
-
-			}
-		}
-		return success;
-	}
-
-	@Override
-	public void flush() throws IOException {
-		// No-op
-	}
-
-	@Override
-	public void close() throws IOException {
-		// No-op
-	}
+    /*
+     * (non-Javadoc)
+     * @see java.io.Writer#close()
+     */
+    @Override
+    public void close() throws IOException {
+	// No-op
+    }
 
 }
