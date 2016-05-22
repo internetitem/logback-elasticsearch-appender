@@ -28,9 +28,9 @@ In your `logback.xml`:
             <loggerName>es-logger</loggerName> <!-- optional -->
             <errorLoggerName>es-error-logger</errorLoggerName> <!-- optional -->
             <connectTimeout>30000</connectTimeout> <!-- optional (in ms, default 30000) -->
-            <errorsToStdErr>false</errorsToStdErr> <!-- optional (default false) -->
+            <errorsToStderr>false</errorsToStderr> <!-- optional (default false) -->
             <includeCallerData>false</includeCallerData> <!-- optional (default false) -->
-            <logsToStdErr>false</logsToStdErr> <!-- optional (default false) -->
+            <logsToStderr>false</logsToStderr> <!-- optional (default false) -->
             <maxQueueSize>104857600</maxQueueSize> <!-- optional (default 104857600) -->
             <maxRetries>3</maxRetries> <!-- optional (default 3) -->
             <readTimeout>30000</readTimeout> <!-- optional (in ms, default 30000) -->
