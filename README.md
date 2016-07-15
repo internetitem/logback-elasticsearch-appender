@@ -9,14 +9,14 @@ This software is dual-licensed under the EPL 1.0 and LGPL 2.1, which is identica
 
 Usage
 =====
-Include slf4j and logback as usual.
+Include slf4j and logback as usual (depending on this library will *not* automatically pull them in).
 
 In your `pom.xml` (or equivalent), add:
  
      <dependency>
         <groupId>com.internetitem</groupId>
         <artifactId>logback-elasticsearch-appender</artifactId>
-        <version>1.2</version>
+        <version>1.3</version>
      </dependency>
 
 In your `logback.xml`:
