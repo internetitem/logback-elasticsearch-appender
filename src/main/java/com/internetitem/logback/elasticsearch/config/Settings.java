@@ -20,6 +20,7 @@ public class Settings {
 	private boolean includeCallerData;
         private boolean rawJsonMessage;
 	private int maxQueueSize = 100 * 1024 * 1024;
+	private Authentication authentication;
 
 	public String getIndex() {
 		return index;
@@ -134,5 +135,13 @@ public class Settings {
 
 	public void setRawJsonMessage(boolean rawJsonMessage) {
 		this.rawJsonMessage = rawJsonMessage;
+	}
+
+	public Authentication getAuthentication() {
+		return authentication;
+	}
+
+	public void setAuthentication(Authentication authentication) {
+		this.authentication = authentication;
 	}
 }
