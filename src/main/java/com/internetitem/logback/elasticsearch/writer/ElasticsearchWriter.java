@@ -60,13 +60,20 @@ public class ElasticsearchWriter implements SafeWriter {
 			urlConnection.setConnectTimeout(settings.getConnectTimeout());
 			urlConnection.setRequestMethod("POST");
 
+			String body = sendBuffer.toString();
+
 			if (!headerList.isEmpty()) {
 				for(HttpRequestHeader header: headerList) {
 					urlConnection.setRequestProperty(header.getName(), header.getValue());
 				}
 			}
+
+			if (settings.getAuthentication() != null) {
+				settings.getAuthentication().addAuth(urlConnection, body);
+			}
+
 			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
-			writer.write(sendBuffer.toString());
+			writer.write(body);
 			writer.flush();
 			writer.close();
 

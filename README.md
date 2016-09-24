@@ -104,6 +104,7 @@ Configuration Reference
  * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
  * `errorLoggerName` (optional): If set, any internal errors or problems will be logged to this logger
  * `rawJsonMessage` (optional, default false): If set to `true`, the log message is interpreted as pre-formatted raw JSON message. 
+ * `authentication` (optional, default null): If set, adds the ability to add extra headers to the bulk requests (to pass authentication, for example). See below.
 
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
@@ -119,3 +120,10 @@ Included is also an Elasticsearch appender for Logback Access. The configuration
  * The Appender class name is `com.internetitem.logback.elasticsearch.ElasticsearchAccessAppender`
  * The `value` for each `property` uses the [Logback Access conversion words](http://logback.qos.ch/manual/layouts.html#logback-access).
 
+Authentication
+==============
+
+An example of using the optional authentication:
+```
+    settings.setAuthentication(new BasicAuthentication())
+```
