@@ -16,7 +16,7 @@ In your `pom.xml` (or equivalent), add:
      <dependency>
         <groupId>com.internetitem</groupId>
         <artifactId>logback-elasticsearch-appender</artifactId>
-        <version>1.3</version>
+        <version>1.4</version>
      </dependency>
 
 In your `logback.xml`:
