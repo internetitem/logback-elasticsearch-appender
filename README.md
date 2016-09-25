@@ -36,6 +36,7 @@ In your `logback.xml`:
             <readTimeout>30000</readTimeout> <!-- optional (in ms, default 30000) -->
             <sleepTime>250</sleepTime> <!-- optional (in ms, default 250) -->
             <rawJsonMessage>false</rawJsonMessage> <!-- optional (default false) -->
+            <authentication class="com.internetitem.logback.elasticsearch.config.BasicAuthentication" /> <!-- optional -->
             <properties>
                 <property>
                     <name>host</name>
@@ -104,13 +105,20 @@ Configuration Reference
  * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
  * `errorLoggerName` (optional): If set, any internal errors or problems will be logged to this logger
  * `rawJsonMessage` (optional, default false): If set to `true`, the log message is interpreted as pre-formatted raw JSON message. 
- * `authentication` (optional, default null): If set, adds the ability to add extra headers to the bulk requests (to pass authentication, for example). See below.
+ * `authentication` (optional): Add the ability to send authentication headers (see below)
 
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
  * `name` (required): Key to be used in the log event
  * `value` (required): Text string to be sent. Internally, the value is populated using a Logback PatternLayout, so all [Conversion Words](http://logback.qos.ch/manual/layouts.html#conversionWord) can be used (in addition to the standard static variable interpolations like `${HOSTNAME}`).
  * `allowEmpty` (optional, default `false`): Normally, if the `value` results in a `null` or empty string, the field will not be sent. If `allowEmpty` is set to `true` then the field will be sent regardless
+
+Authentication
+==============
+
+Authentication is a pluggable mechanism. You must specify the authentication class on the XML element itself. The currently supported classes are:
+
+* `com.internetitem.logback.elasticsearch.config.BasicAuthentication` - Username and password are taken from the URL (i.e. `http://username:password@yourserver/_bulk`)
 
 Logback Access
 ==============
@@ -120,10 +128,3 @@ Included is also an Elasticsearch appender for Logback Access. The configuration
  * The Appender class name is `com.internetitem.logback.elasticsearch.ElasticsearchAccessAppender`
  * The `value` for each `property` uses the [Logback Access conversion words](http://logback.qos.ch/manual/layouts.html#logback-access).
 
-Authentication
-==============
-
-An example of using the optional authentication:
-```
-    settings.setAuthentication(new BasicAuthentication())
-```
