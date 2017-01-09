@@ -123,9 +123,13 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
 		this.headers = httpRequestHeaders;
 	}
 
-        public void setRawJsonMessage(boolean rawJsonMessage) {
-                settings.setRawJsonMessage(rawJsonMessage);
-        }
+	public void setRawJsonMessage(boolean rawJsonMessage) {
+			settings.setRawJsonMessage(rawJsonMessage);
+	}
+
+	public void setIncludeMdc(boolean includeMdc) {
+		settings.setIncludeMdc(includeMdc);
+	}
 
     public void setAuthentication(Authentication auth) {
         settings.setAuthentication(auth);
