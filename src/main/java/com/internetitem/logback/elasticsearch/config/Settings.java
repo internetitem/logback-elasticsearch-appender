@@ -18,7 +18,8 @@ public class Settings {
 	private boolean logsToStderr;
 	private boolean errorsToStderr;
 	private boolean includeCallerData;
-        private boolean rawJsonMessage;
+	private boolean includeMdc;
+	private boolean rawJsonMessage;
 	private int maxQueueSize = 100 * 1024 * 1024;
 	private Authentication authentication;
 
@@ -143,5 +144,13 @@ public class Settings {
 
 	public void setAuthentication(Authentication authentication) {
 		this.authentication = authentication;
+	}
+
+	public boolean isIncludeMdc() {
+		return includeMdc;
+	}
+
+	public void setIncludeMdc(boolean includeMdc) {
+		this.includeMdc = includeMdc;
 	}
 }
