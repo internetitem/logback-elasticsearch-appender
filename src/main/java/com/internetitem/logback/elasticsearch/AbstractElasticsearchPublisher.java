@@ -14,6 +14,7 @@ import com.internetitem.logback.elasticsearch.writer.LoggerWriter;
 import com.internetitem.logback.elasticsearch.writer.StdErrWriter;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,7 +24,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 	private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(1);
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.ssZ");
+	private static final ThreadLocal<DateFormat> DATE_FORMAT = new ThreadLocal<DateFormat> () {
+		@Override
+		protected DateFormat initialValue() {
+			return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.ssZ");
+		}
+	};
 
 	public static final String THREAD_NAME_PREFIX = "es-writer-";
 
@@ -191,7 +197,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	protected abstract void serializeCommonFields(JsonGenerator gen, T event) throws IOException;
 
 	protected static String getTimestamp(long timestamp) {
-		return DATE_FORMAT.format(new Date(timestamp));
+		return DATE_FORMAT.get().format(new Date(timestamp));
 	}
 
 }

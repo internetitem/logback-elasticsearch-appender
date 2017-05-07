@@ -2,10 +2,6 @@ package com.internetitem.logback.elasticsearch.util;
 
 import java.io.ByteArrayOutputStream;
 
-/**
- * @author Sridharan Kuppa
- *         created on 12/8/16
- */
 public class Base64
 {
     public static String encode(byte[] data)
