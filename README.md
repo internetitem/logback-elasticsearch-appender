@@ -12,7 +12,7 @@ Usage
 Include slf4j and logback as usual (depending on this library will *not* automatically pull them in).
 
 In your `pom.xml` (or equivalent), add:
- 
+
      <dependency>
         <groupId>com.internetitem</groupId>
         <artifactId>logback-elasticsearch-appender</artifactId>
@@ -68,16 +68,16 @@ In your `logback.xml`:
                 </header>
             </headers>
         </appender>
-        
+
         <root level="info">
             <appender-ref ref="FILELOGGER" />
             <appender-ref ref="ELASTIC" />
         </root>
-    
+
         <logger name="es-error-logger" level="INFO" additivity="false">
             <appender-ref ref="FILELOGGER" />
         </logger>
-    
+
         <logger name="es-logger" level="INFO" additivity="false">
             <appender name="ES_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
                 <!-- ... -->
@@ -114,6 +114,27 @@ The fields `@timestamp` and `message` are always sent and can not currently be c
  * `name` (required): Key to be used in the log event
  * `value` (required): Text string to be sent. Internally, the value is populated using a Logback PatternLayout, so all [Conversion Words](http://logback.qos.ch/manual/layouts.html#conversionWord) can be used (in addition to the standard static variable interpolations like `${HOSTNAME}`).
  * `allowEmpty` (optional, default `false`): Normally, if the `value` results in a `null` or empty string, the field will not be sent. If `allowEmpty` is set to `true` then the field will be sent regardless
+
+Groovy Configuration
+====================
+
+If you configure logback using `logback.groovy`, this can be configured as follows:
+
+      import com.internetitem.logback.elasticsearch.ElasticsearchAppender
+
+      appender("ELASTIC", ElasticsearchAppender){
+      	url = 'http://yourserver/_bulk'
+      	index = 'logs-%date{yyyy-MM-dd}'
+      	type = 'log'
+      	rawJsonMessage = true
+      	errorsToStderr = true
+      	authentication = new BasicAuthentication()
+      	def configHeaders = new HttpRequestHeaders()
+      	configHeaders.addHeader(new HttpRequestHeader(name: 'Content-Type', value: 'text/plain'))
+      	headers = configHeaders
+      }
+
+      root(INFO, ["ELASTIC"])
 
 Authentication
 ==============
