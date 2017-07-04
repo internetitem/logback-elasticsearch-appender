@@ -22,6 +22,7 @@ public class Settings {
 	private boolean rawJsonMessage;
 	private int maxQueueSize = 100 * 1024 * 1024;
 	private Authentication authentication;
+	private int maxMessageSize = -1;
 
 	public String getIndex() {
 		return index;
@@ -130,7 +131,7 @@ public class Settings {
 		this.errorLoggerName = errorLoggerName;
 	}
         
-        public boolean isRawJsonMessage() {
+	public boolean isRawJsonMessage() {
 		return rawJsonMessage;
 	}
 
@@ -152,5 +153,13 @@ public class Settings {
 
 	public void setIncludeMdc(boolean includeMdc) {
 		this.includeMdc = includeMdc;
+	}
+
+	public int getMaxMessageSize() {
+		return maxMessageSize;
+	}
+
+	public void setMaxMessageSize(int maxMessageSize) {
+		this.maxMessageSize = maxMessageSize;
 	}
 }
