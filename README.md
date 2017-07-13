@@ -94,7 +94,7 @@ Configuration Reference
 
  * `url` (required): The URL to your Elasticsearch bulk API endpoint
  * `index` (required): Name if the index to publish to (populated using PatternLayout just like individual properties - see below)
- * `type` (optional): Elasticsearch `_type` field for records
+ * `type` (required): Elasticsearch `_type` field for records
  * `sleepTime` (optional, default 250): Time (in ms) to sleep between attempts at delivering a message
  * `maxRetries` (optional, default 3): Number of times to attempt retrying a message on failure. Note that subsequent log messages reset the retry count to 0. This value is important if your program is about to exit (i.e. it is not producing any more log lines) but is unable to deliver some messages to ES
  * `connectTimeout` (optional, default 30000): Elasticsearch connect timeout (in ms)
