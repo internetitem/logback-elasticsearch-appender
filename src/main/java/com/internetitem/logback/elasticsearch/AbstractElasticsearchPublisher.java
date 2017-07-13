@@ -27,7 +27,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	private static final ThreadLocal<DateFormat> DATE_FORMAT = new ThreadLocal<DateFormat> () {
 		@Override
 		protected DateFormat initialValue() {
-			return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.ssZ");
+			return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 		}
 	};
 
