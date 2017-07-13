@@ -135,7 +135,7 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
         settings.setAuthentication(auth);
     }
 
-    public void setMaxMessgaeSize(int maxMessageSize) {
+    public void setMaxMessageSize(int maxMessageSize) {
     	settings.setMaxMessageSize(maxMessageSize);
 	}
 }
