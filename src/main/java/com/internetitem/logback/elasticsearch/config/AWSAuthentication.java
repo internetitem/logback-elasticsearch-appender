@@ -18,7 +18,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.HttpMethodName;
-import com.amazonaws.regions.AwsRegionProviderChain;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.util.StringInputStream;
 
 /**
@@ -34,7 +34,7 @@ public class AWSAuthentication implements Authentication {
     public AWSAuthentication() {
         signer = new AWS4Signer(false);
         signer.setServiceName("es");
-        signer.setRegionName(new AwsRegionProviderChain().getRegion());
+        signer.setRegionName(new DefaultAwsRegionProviderChain().getRegion());
         AWSCredentialsProvider credsProvider = new DefaultAWSCredentialsProviderChain();
         credentials = credsProvider.getCredentials();
     }
