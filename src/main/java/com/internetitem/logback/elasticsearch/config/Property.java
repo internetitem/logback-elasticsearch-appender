@@ -4,6 +4,11 @@ public class Property {
 	private String name;
 	private String value;
 	private boolean allowEmpty;
+	private Type type = Type.STRING;
+
+	public enum Type {
+		STRING, INT, FLOAT, BOOLEAN
+	}
 
 	public Property() {
 	}
@@ -36,5 +41,17 @@ public class Property {
 
 	public void setAllowEmpty(boolean allowEmpty) {
 		this.allowEmpty = allowEmpty;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		try {
+			this.type = Enum.valueOf(Type.class, type.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			this.type = Type.STRING;
+		}
 	}
 }

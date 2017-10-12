@@ -49,6 +49,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 	private volatile boolean working;
 
+	private final PropertySerializer propertySerializer = PropertySerializer.getInstance();
 
 	public AbstractElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties, HttpRequestHeaders headers) throws IOException {
 		this.errorReporter = errorReporter;
@@ -169,13 +170,13 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 	private void serializeIndexString(JsonGenerator gen, T event) throws IOException {
 		gen.writeStartObject();
-			gen.writeObjectFieldStart("index");
-				gen.writeObjectField("_index", indexPattern.encode(event));
-				String type = settings.getType();
-				if (type != null) {
-					gen.writeObjectField("_type", type);
-				}
-			gen.writeEndObject();
+		gen.writeObjectFieldStart("index");
+		gen.writeObjectField("_index", indexPattern.encode(event));
+		String type = settings.getType();
+		if (type != null) {
+			gen.writeObjectField("_type", type);
+		}
+		gen.writeEndObject();
 		gen.writeEndObject();
 	}
 
@@ -185,10 +186,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		serializeCommonFields(gen, event);
 
 		for (AbstractPropertyAndEncoder<T> pae : propertyList) {
-			String value = pae.encode(event);
-			if (pae.allowEmpty() || (value != null && !value.isEmpty())) {
-				gen.writeObjectField(pae.getName(), value);
-			}
+			propertySerializer.serializeProperty(gen, event, pae);
 		}
 
 		gen.writeEndObject();

@@ -31,4 +31,8 @@ public abstract class AbstractPropertyAndEncoder<T> {
 	public boolean allowEmpty() {
 		return property.isAllowEmpty();
 	}
+
+	public Property.Type getType() {
+		return property.getType();
+	}
 }
