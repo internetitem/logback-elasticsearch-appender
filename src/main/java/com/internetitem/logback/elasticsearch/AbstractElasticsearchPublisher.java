@@ -49,7 +49,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 	private volatile boolean working;
 
-	private final PropertySerializer propertySerializer = PropertySerializer.getInstance();
+	private final PropertySerializer propertySerializer;
 
 	public AbstractElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties, HttpRequestHeaders headers) throws IOException {
 		this.errorReporter = errorReporter;
@@ -65,6 +65,8 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 		this.indexPattern = buildPropertyAndEncoder(context, new Property("<index>", settings.getIndex(), false));
 		this.propertyList = generatePropertyList(context, properties);
+
+		this.propertySerializer = new PropertySerializer();
 	}
 
 	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter, HttpRequestHeaders httpRequestHeaders)  {

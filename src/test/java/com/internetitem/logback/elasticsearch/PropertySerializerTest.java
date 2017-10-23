@@ -25,7 +25,7 @@ public class PropertySerializerTest {
     @Mock
     private ILoggingEvent loggingEvent;
 
-    private PropertySerializer<ILoggingEvent> propertySerializer = PropertySerializer.getInstance();
+    private PropertySerializer<ILoggingEvent> propertySerializer = new PropertySerializer<>();
 
     @Test
     public void should_default_to_string_type() throws Exception {
