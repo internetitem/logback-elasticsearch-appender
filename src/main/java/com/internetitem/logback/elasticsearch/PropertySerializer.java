@@ -6,7 +6,7 @@ import com.internetitem.logback.elasticsearch.util.AbstractPropertyAndEncoder;
 import java.io.IOException;
 
 class PropertySerializer<T> {
-    synchronized void serializeProperty(JsonGenerator jsonGenerator, T event, AbstractPropertyAndEncoder<T> propertyAndEncoder) throws IOException {
+    void serializeProperty(JsonGenerator jsonGenerator, T event, AbstractPropertyAndEncoder<T> propertyAndEncoder) throws IOException {
         String value = propertyAndEncoder.encode(event);
         if (propertyAndEncoder.allowEmpty() || (value != null && !value.isEmpty())) {
             switch (propertyAndEncoder.getType()) {
