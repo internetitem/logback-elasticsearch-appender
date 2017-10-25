@@ -211,7 +211,7 @@ public class ElasticsearchAppenderTest {
         verify(settings, times(1)).setMaxQueueSize(maxQueueSize);
         verify(settings, times(1)).setIndex(index);
         verify(settings, times(1)).setType(type);
-        verify(settings, times(1)).setUrl(new URL(url));
+        verify(settings, times(1)).setUrl(url);
         verify(settings, times(1)).setLoggerName(logger);
         verify(settings, times(1)).setErrorLoggerName(errorLogger);
         verify(settings, times(1)).setMaxRetries(maxRetries);

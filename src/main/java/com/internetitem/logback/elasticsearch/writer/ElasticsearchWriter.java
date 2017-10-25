@@ -14,6 +14,9 @@ import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
+import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class ElasticsearchWriter implements SafeWriter {
 
 	private StringBuilder sendBuffer;
@@ -21,6 +24,7 @@ public class ElasticsearchWriter implements SafeWriter {
 	private ErrorReporter errorReporter;
 	private Settings settings;
 	private Collection<HttpRequestHeader> headerList;
+	private final AtomicInteger nextIdx = new AtomicInteger(0);
 
 	private boolean bufferExceeded;
 
@@ -52,7 +56,16 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
+		String[] urls = settings.getUrl().split(",");
+
+		int current = nextIdx.get();
+		int next = current >= urls.length - 1 ? 0 : current + 1;
+		if (!nextIdx.compareAndSet(current, next)) {
+			return;
+		}
+
+		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(urls[current]).openConnection());
+
 		try {
 			urlConnection.setDoInput(true);
 			urlConnection.setDoOutput(true);

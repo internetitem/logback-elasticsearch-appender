@@ -108,7 +108,7 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
 	}
 
 	public void setUrl(String url) throws MalformedURLException {
-		settings.setUrl(new URL(url));
+		settings.setUrl(url);
 	}
 
 	public void setLoggerName(String logger) {
