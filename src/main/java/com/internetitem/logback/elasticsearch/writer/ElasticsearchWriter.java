@@ -61,7 +61,7 @@ public class ElasticsearchWriter implements SafeWriter {
 		}
 
 		String body = sendBuffer.toString();
-		sendBuffer.setLength(0);
+		sendBuffer.setLength(0);			// 	acceptable data loss
 		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(urls[current]).openConnection());
 
 		try {
