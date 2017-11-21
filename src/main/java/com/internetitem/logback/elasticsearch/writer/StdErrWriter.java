@@ -13,4 +13,9 @@ public class StdErrWriter implements SafeWriter {
 	public boolean hasPendingData() {
 		return false;
 	}
+
+	@Override
+	public boolean canSendData() {
+		return false;
+	}
 }
