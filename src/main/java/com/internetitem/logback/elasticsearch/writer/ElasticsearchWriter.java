@@ -97,9 +97,9 @@ public class ElasticsearchWriter implements SafeWriter {
 			}
 		} finally {
 			urlConnection.disconnect();
+			sendBuffer.setLength(0);		// clear buffer when send failed
 		}
 
-		sendBuffer.setLength(0);
 		if (bufferExceeded) {
 			errorReporter.logInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
