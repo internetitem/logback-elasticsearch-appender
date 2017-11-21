@@ -1,10 +1,6 @@
 package com.internetitem.logback.elasticsearch.writer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +10,9 @@ import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
+import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class ElasticsearchWriter implements SafeWriter {
 
 	private StringBuilder sendBuffer;
@@ -21,6 +20,7 @@ public class ElasticsearchWriter implements SafeWriter {
 	private ErrorReporter errorReporter;
 	private Settings settings;
 	private Collection<HttpRequestHeader> headerList;
+	private final AtomicInteger nextIdx = new AtomicInteger(0);
 
 	private boolean bufferExceeded;
 
@@ -52,15 +52,24 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
+		String[] urls = settings.getUrl().split(",");
+
+		int current = nextIdx.get();
+		int next = current >= urls.length - 1 ? 0 : current + 1;
+		if (!nextIdx.compareAndSet(current, next)) {
+			return;
+		}
+
+		String body = sendBuffer.toString();
+		sendBuffer.setLength(0);			// 	acceptable data loss
+		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(urls[current]).openConnection());
+
 		try {
 			urlConnection.setDoInput(true);
 			urlConnection.setDoOutput(true);
 			urlConnection.setReadTimeout(settings.getReadTimeout());
 			urlConnection.setConnectTimeout(settings.getConnectTimeout());
 			urlConnection.setRequestMethod("POST");
-
-			String body = sendBuffer.toString();
 
 			if (!headerList.isEmpty()) {
 				for(HttpRequestHeader header: headerList) {
@@ -86,7 +95,6 @@ public class ElasticsearchWriter implements SafeWriter {
 			urlConnection.disconnect();
 		}
 
-		sendBuffer.setLength(0);
 		if (bufferExceeded) {
 			errorReporter.logInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
@@ -95,6 +103,10 @@ public class ElasticsearchWriter implements SafeWriter {
 
 	public boolean hasPendingData() {
 		return sendBuffer.length() != 0;
+	}
+
+	public boolean canSendData() {
+		return sendBuffer.length() >= settings.getMaxQueueSize() / 2;
 	}
 
 	private static String slurpErrors(HttpURLConnection urlConnection) {

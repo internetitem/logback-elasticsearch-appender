@@ -1,12 +1,10 @@
 package com.internetitem.logback.elasticsearch.config;
 
-import java.net.URL;
-
 public class Settings {
 
 	private String index;
 	private String type;
-	private URL url;
+	private String url;
 
 	private String loggerName;
 	private String errorLoggerName;
@@ -115,11 +113,11 @@ public class Settings {
 		this.loggerName = loggerName;
 	}
 
-	public URL getUrl() {
+	public String getUrl() {
 		return url;
 	}
 
-	public void setUrl(URL url) {
+	public void setUrl(String url) {
 		this.url = url;
 	}
 

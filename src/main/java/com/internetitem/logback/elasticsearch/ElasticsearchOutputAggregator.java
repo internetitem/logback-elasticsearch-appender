@@ -63,6 +63,15 @@ public class ElasticsearchOutputAggregator extends Writer {
 		return success;
 	}
 
+	public boolean canSendData() {
+		for (SafeWriter writer : writers) {
+			if (writer.canSendData()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@Override
 	public void flush() throws IOException {
 		// No-op

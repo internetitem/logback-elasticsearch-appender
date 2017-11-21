@@ -119,7 +119,10 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		int maxRetries = settings.getMaxRetries();
 		while (true) {
 			try {
-				Thread.sleep(settings.getSleepTime());
+
+				if (!outputAggregator.canSendData()) {
+					Thread.sleep(settings.getSleepTime());
+				}
 
 				List<T> eventsCopy = null;
 				synchronized (lock) {
