@@ -1,10 +1,6 @@
 package com.internetitem.logback.elasticsearch.writer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.Collections;
@@ -64,6 +60,8 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
+		String body = sendBuffer.toString();
+		sendBuffer.setLength(0);
 		HttpURLConnection urlConnection = (HttpURLConnection)(new URL(urls[current]).openConnection());
 
 		try {
@@ -72,8 +70,6 @@ public class ElasticsearchWriter implements SafeWriter {
 			urlConnection.setReadTimeout(settings.getReadTimeout());
 			urlConnection.setConnectTimeout(settings.getConnectTimeout());
 			urlConnection.setRequestMethod("POST");
-
-			String body = sendBuffer.toString();
 
 			if (!headerList.isEmpty()) {
 				for(HttpRequestHeader header: headerList) {
@@ -97,7 +93,6 @@ public class ElasticsearchWriter implements SafeWriter {
 			}
 		} finally {
 			urlConnection.disconnect();
-			sendBuffer.setLength(0);		// clear buffer when send failed
 		}
 
 		if (bufferExceeded) {
@@ -108,6 +103,10 @@ public class ElasticsearchWriter implements SafeWriter {
 
 	public boolean hasPendingData() {
 		return sendBuffer.length() != 0;
+	}
+
+	public boolean canSendData() {
+		return sendBuffer.length() >= settings.getMaxQueueSize() / 2;
 	}
 
 	private static String slurpErrors(HttpURLConnection urlConnection) {

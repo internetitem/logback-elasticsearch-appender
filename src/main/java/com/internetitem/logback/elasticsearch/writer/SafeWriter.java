@@ -9,4 +9,6 @@ public interface SafeWriter {
 	void sendData() throws IOException;
 
 	boolean hasPendingData();
+
+	boolean canSendData();
 }
