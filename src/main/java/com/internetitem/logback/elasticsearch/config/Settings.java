@@ -23,6 +23,7 @@ public class Settings {
 	private int maxQueueSize = 100 * 1024 * 1024;
 	private Authentication authentication;
 	private int maxMessageSize = -1;
+	private int maxEvents = -1;
 
 	public String getIndex() {
 		return index;
@@ -161,5 +162,13 @@ public class Settings {
 
 	public void setMaxMessageSize(int maxMessageSize) {
 		this.maxMessageSize = maxMessageSize;
+	}
+
+	public int getMaxEvents() {
+		return maxEvents;
+	}
+
+	public void setMaxEvents(int maxEvents) {
+		this.maxEvents = maxEvents;
 	}
 }
