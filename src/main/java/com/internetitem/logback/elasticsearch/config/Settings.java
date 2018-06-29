@@ -7,7 +7,8 @@ public class Settings {
 	private String index;
 	private String type;
 	private URL url;
-
+	private boolean validateCert = true;
+	
 	private String loggerName;
 	private String errorLoggerName;
 
@@ -161,5 +162,19 @@ public class Settings {
 
 	public void setMaxMessageSize(int maxMessageSize) {
 		this.maxMessageSize = maxMessageSize;
+	}
+
+	/**
+	 * @return the validateCert
+	 */
+	public boolean isValidateCert() {
+		return validateCert;
+	}
+
+	/**
+	 * @param validateCert the validateCert to set
+	 */
+	public void setValidateCert(boolean validateCert) {
+		this.validateCert = validateCert;
 	}
 }
