@@ -6,6 +6,8 @@ import com.internetitem.logback.elasticsearch.writer.SafeWriter;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -46,7 +48,7 @@ public class ElasticsearchOutputAggregator extends Writer {
 		return !writers.isEmpty();
 	}
 
-	public boolean sendData() {
+	public boolean sendData() throws KeyManagementException, NoSuchAlgorithmException {
 		boolean success = true;
 		for (SafeWriter writer : writers) {
 			try {

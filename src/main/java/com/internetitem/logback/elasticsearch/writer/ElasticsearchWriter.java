@@ -6,9 +6,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.util.Collection;
 import java.util.Collections;
-
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
@@ -27,9 +33,8 @@ public class ElasticsearchWriter implements SafeWriter {
 	public ElasticsearchWriter(ErrorReporter errorReporter, Settings settings, HttpRequestHeaders headers) {
 		this.errorReporter = errorReporter;
 		this.settings = settings;
-		this.headerList = headers != null && headers.getHeaders() != null
-			? headers.getHeaders()
-			: Collections.<HttpRequestHeader>emptyList();
+		this.headerList = headers != null && headers.getHeaders() != null ? headers.getHeaders()
+				: Collections.<HttpRequestHeader>emptyList();
 
 		this.sendBuffer = new StringBuilder();
 	}
@@ -42,17 +47,41 @@ public class ElasticsearchWriter implements SafeWriter {
 		sendBuffer.append(cbuf, off, len);
 
 		if (sendBuffer.length() >= settings.getMaxQueueSize()) {
-			errorReporter.logWarning("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
+			errorReporter.logWarning(
+					"Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
 			bufferExceeded = true;
 		}
 	}
 
-	public void sendData() throws IOException {
+	public void sendData() throws IOException, NoSuchAlgorithmException, KeyManagementException {
 		if (sendBuffer.length() <= 0) {
 			return;
 		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
+		HttpURLConnection urlConnection;
+		if ("https".equalsIgnoreCase(settings.getUrl().getProtocol())) {
+			if (!settings.isValidateCert()) {
+				//accept all certs
+				TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+						return null;
+					}
+
+					public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+					}
+
+					public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+					}
+				} };				
+				SSLContext sc = SSLContext.getInstance("SSL");
+			    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+			    HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());				
+			}
+			urlConnection = (HttpsURLConnection) (settings.getUrl().openConnection());
+		} else {
+			urlConnection = (HttpURLConnection) (settings.getUrl().openConnection());
+		}
+
 		try {
 			urlConnection.setDoInput(true);
 			urlConnection.setDoOutput(true);
@@ -63,7 +92,7 @@ public class ElasticsearchWriter implements SafeWriter {
 			String body = sendBuffer.toString();
 
 			if (!headerList.isEmpty()) {
-				for(HttpRequestHeader header: headerList) {
+				for (HttpRequestHeader header : headerList) {
 					urlConnection.setRequestProperty(header.getName(), header.getValue());
 				}
 			}
