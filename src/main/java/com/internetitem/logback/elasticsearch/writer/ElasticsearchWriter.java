@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.Collections;
+import javax.net.ssl.HttpsURLConnection;
 
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
@@ -52,7 +53,12 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
+		HttpURLConnection urlConnection;
+		if ("https".equalsIgnoreCase(settings.getUrl().getProtocol())) {
+			urlConnection = (HttpsURLConnection) (settings.getUrl().openConnection());
+		} else {
+			urlConnection = (HttpURLConnection) (settings.getUrl().openConnection());
+		}
 		try {
 			urlConnection.setDoInput(true);
 			urlConnection.setDoOutput(true);
