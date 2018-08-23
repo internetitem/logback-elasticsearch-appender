@@ -1,18 +1,14 @@
 package com.internetitem.logback.elasticsearch;
 
-import java.io.IOException;
-import java.util.Map;
-
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Context;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
-import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
-import com.internetitem.logback.elasticsearch.config.Property;
-import com.internetitem.logback.elasticsearch.config.Settings;
-import com.internetitem.logback.elasticsearch.util.AbstractPropertyAndEncoder;
-import com.internetitem.logback.elasticsearch.util.ClassicPropertyAndEncoder;
-import com.internetitem.logback.elasticsearch.util.ErrorReporter;
+import com.internetitem.logback.elasticsearch.config.*;
+import com.internetitem.logback.elasticsearch.util.*;
+
+import java.io.IOException;
+import java.util.*;
+
 
 public class ClassicElasticsearchPublisher extends AbstractElasticsearchPublisher<ILoggingEvent> {
 
@@ -40,10 +36,29 @@ public class ClassicElasticsearchPublisher extends AbstractElasticsearchPublishe
             gen.writeObjectField("message", formattedMessage);
         }
 
-        if(settings.isIncludeMdc()) {
+        if (settings.isIncludeMdc()) {
+            List<String> excludedKeys = getExcludedMdcKeys();
             for (Map.Entry<String, String> entry : event.getMDCPropertyMap().entrySet()) {
-                gen.writeObjectField(entry.getKey(), entry.getValue());
+                if (!excludedKeys.contains(entry.getKey())) {
+                    gen.writeObjectField(entry.getKey(), entry.getValue());
+                }
             }
         }
+    }
+
+    private List<String> getExcludedMdcKeys() {
+        /*
+         * using a List instead of a Map because the assumption is that
+         * the number of excluded keys will be very small and not cause
+         * a performance issue
+         */
+        List<String> result = new ArrayList<>();
+        if (settings.getExcludedMdcKeys() != null) {
+            String[] parts = settings.getExcludedMdcKeys().split(",");
+            for (String part : parts) {
+                result.add(part.trim());
+            }
+        }
+        return result;
     }
 }

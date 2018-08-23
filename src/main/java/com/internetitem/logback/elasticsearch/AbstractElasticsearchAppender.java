@@ -1,15 +1,12 @@
 package com.internetitem.logback.elasticsearch;
 
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import com.internetitem.logback.elasticsearch.config.*;
+import com.internetitem.logback.elasticsearch.util.ErrorReporter;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import com.internetitem.logback.elasticsearch.config.Authentication;
-import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
-import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
-import com.internetitem.logback.elasticsearch.config.Settings;
-import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
 public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedAppenderBase<T> {
 
@@ -129,6 +126,10 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
 
 	public void setIncludeMdc(boolean includeMdc) {
 		settings.setIncludeMdc(includeMdc);
+	}
+
+	public void setExcludedMdcKeys(String setExcludedMdcKeys) {
+		settings.setExcludedMdcKeys(setExcludedMdcKeys);
 	}
 
     public void setAuthentication(Authentication auth) {
