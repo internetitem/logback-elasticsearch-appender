@@ -65,7 +65,7 @@ In your `logback.xml`:
             <headers>
                 <header>
                     <name>Content-Type</name>
-                    <value>text/plain</value>
+                    <value>application/json</value>
                 </header>
             </headers>
         </appender>
