@@ -104,8 +104,12 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 			return;
 		}
 
+		int max = settings.getMaxEvents();
 		synchronized (lock) {
 			events.add(event);
+			if (max > 0 && events.size() > max) {
+				events.subList(0, events.size() - max).clear();
+			}
 			if (!working) {
 				working = true;
 				Thread thread = new Thread(this, THREAD_NAME_PREFIX + THREAD_COUNTER.getAndIncrement());

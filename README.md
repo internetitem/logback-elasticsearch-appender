@@ -33,6 +33,7 @@ In your `logback.xml`:
             <logsToStderr>false</logsToStderr> <!-- optional (default false) -->
             <maxQueueSize>104857600</maxQueueSize> <!-- optional (default 104857600) -->
             <maxRetries>3</maxRetries> <!-- optional (default 3) -->
+            <maxEvents>100</maxEvents><!-- optional (default -1) -->
             <readTimeout>30000</readTimeout> <!-- optional (in ms, default 30000) -->
             <sleepTime>250</sleepTime> <!-- optional (in ms, default 250) -->
             <rawJsonMessage>false</rawJsonMessage> <!-- optional (default false) -->
@@ -104,6 +105,7 @@ Configuration Reference
  * `errorsToStderr` (optional, default false): If set to `true`, any errors in communicating with Elasticsearch will also be dumped to stderr (normally they are only reported to the internal Logback Status system, in order to prevent a feedback loop)
  * `logsToStderr` (optional, default false): If set to `true`, dump the raw Elasticsearch messages to stderr
  * `maxQueueSize` (optional, default 104,857,600 = 200MB): Maximum size (in characters) of the send buffer. After this point, *logs will be dropped*. This should only happen if Elasticsearch is down, but this is a self-protection mechanism to ensure that the logging system doesn't cause the main process to run out of memory. Note that this maximum is approximate; once the maximum is hit, no new logs will be accepted until it shrinks, but any logs already accepted to be processed will still be added to the buffer
+ * `maxEvents` (optional, default -1 i.e. not limited): Maximum amount of logging events to be stored for later sending. 
  * `loggerName` (optional): If set, raw ES-formatted log data will be sent to this logger
  * `errorLoggerName` (optional): If set, any internal errors or problems will be logged to this logger
  * `rawJsonMessage` (optional, default false): If set to `true`, the log message is interpreted as pre-formatted raw JSON message.
