@@ -138,4 +138,49 @@ public class PropertySerializerTest {
         // then
         verify(jsonGenerator).writeObject("value");
     }
+
+    @Test
+    public void should_serialize_object_as_raw_json()  throws Exception {
+        Property property = new Property();
+        property.setName("args");
+        property.setValue("{\"name\": \"value\", \"serial\": 1} ");
+        property.setType("object");
+
+        org.mockito.Mockito.reset(jsonGenerator);
+        // when
+        propertySerializer.serializeProperty(jsonGenerator, loggingEvent, new ClassicPropertyAndEncoder(property, context));
+
+        // then
+        verify(jsonGenerator).writeRawValue("{\"name\": \"value\", \"serial\": 1}");
+    }
+
+    @Test
+    public void should_serialize_empty_object()  throws Exception {
+        Property property = new Property();
+        property.setName("args");
+        property.setValue("");
+        property.setType("object");
+        property.setAllowEmpty(true);
+
+        // when
+        propertySerializer.serializeProperty(jsonGenerator, loggingEvent, new ClassicPropertyAndEncoder(property, context));
+
+        // then
+        verify(jsonGenerator).writeRawValue("{}");
+    }
+
+    @Test
+    public void should_serialize_invalid_object_as_text()  throws Exception {
+        Property property = new Property();
+        property.setName("args2");
+        property.setValue("{\"name\": \"value\"");
+        property.setType("object");
+
+        org.mockito.Mockito.reset(jsonGenerator);
+        // when
+        propertySerializer.serializeProperty(jsonGenerator, loggingEvent, new ClassicPropertyAndEncoder(property, context));
+
+        // then
+        verify(jsonGenerator).writeObject("{\"name\": \"value\"");
+    }
 }

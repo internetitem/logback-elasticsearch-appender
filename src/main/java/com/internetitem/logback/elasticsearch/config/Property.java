@@ -7,7 +7,7 @@ public class Property {
 	private Type type = Type.STRING;
 
 	public enum Type {
-		STRING, INT, FLOAT, BOOLEAN
+		STRING, INT, FLOAT, BOOLEAN, OBJECT
 	}
 
 	public Property() {

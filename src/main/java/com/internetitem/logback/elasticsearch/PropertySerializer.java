@@ -19,6 +19,9 @@ class PropertySerializer<T> {
                 case BOOLEAN:
                     serializeBooleanField(jsonGenerator, propertyAndEncoder, value);
                     break;
+                case OBJECT:
+                    serializeJsonObjectField(jsonGenerator, propertyAndEncoder, value);
+                    break;
                 default:
                     serializeStringField(jsonGenerator, propertyAndEncoder, value);
             }
@@ -48,6 +51,21 @@ class PropertySerializer<T> {
     private void serializeBooleanField(JsonGenerator jsonGenerator, AbstractPropertyAndEncoder<T> propertyAndEncoder, String value) throws IOException {
         if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
             jsonGenerator.writeBooleanField(propertyAndEncoder.getName(), Boolean.valueOf(value));
+        } else {
+            serializeStringField(jsonGenerator, propertyAndEncoder, value);
+        }
+    }
+
+
+    private void serializeJsonObjectField(JsonGenerator jsonGenerator, AbstractPropertyAndEncoder<T> propertyAndEncoder, String value) throws IOException {
+        String trimmed = value != null ? value.trim() : "";
+        if ("".equals(value)) {
+            jsonGenerator.writeFieldName(propertyAndEncoder.getName());
+            jsonGenerator.writeRawValue("{}");
+        } else if ((trimmed.startsWith("{") && trimmed.endsWith("}"))
+                || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+            jsonGenerator.writeFieldName(propertyAndEncoder.getName());
+            jsonGenerator.writeRawValue(trimmed);
         } else {
             serializeStringField(jsonGenerator, propertyAndEncoder, value);
         }
