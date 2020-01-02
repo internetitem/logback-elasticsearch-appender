@@ -37,6 +37,7 @@ In your `logback.xml`:
             <sleepTime>250</sleepTime> <!-- optional (in ms, default 250) -->
             <rawJsonMessage>false</rawJsonMessage> <!-- optional (default false) -->
             <includeMdc>false</includeMdc> <!-- optional (default false) -->
+            <excludedMdcKeys>stacktrace</excludedMdcKeys> <!-- optional (default empty) -->
             <maxMessageSize>100</maxMessageSize> <!-- optional (default -1 -->
             <authentication class="com.internetitem.logback.elasticsearch.config.BasicAuthentication" /> <!-- optional -->
             <properties>
@@ -108,6 +109,7 @@ Configuration Reference
  * `errorLoggerName` (optional): If set, any internal errors or problems will be logged to this logger
  * `rawJsonMessage` (optional, default false): If set to `true`, the log message is interpreted as pre-formatted raw JSON message.
  * `includeMdc` (optional, default false): If set to `true`, then all [MDC](http://www.slf4j.org/api/org/slf4j/MDC.html) values will be mapped to properties on the JSON payload.
+ * `excludedMdcKeys` (optional, default empty): comma separated (extra whitespace is fine) list of case sensitive MDC keys that should not be mapped automatically to properties; only useful when includeMdc is set to `true`
  * `maxMessageSize` (optional, default -1): If set to a number greater than 0, truncate messages larger than this length, then append "`..`" to denote that the message was truncated
  * `authentication` (optional): Add the ability to send authentication headers (see below)
 
