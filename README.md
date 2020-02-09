@@ -111,7 +111,7 @@ Configuration Reference
  * `includeMdc` (optional, default false): If set to `true`, then all [MDC](http://www.slf4j.org/api/org/slf4j/MDC.html) values will be mapped to properties on the JSON payload.
  * `maxMessageSize` (optional, default -1): If set to a number greater than 0, truncate messages larger than this length, then append "`..`" to denote that the message was truncated
  * `authentication` (optional): Add the ability to send authentication headers (see below)
- * `enableContextMap` (optional): If the latest parameter in logger call is of type java.util.Map then all content of it will be traversed and written with prefix `context.*`. For event-specific custom fields.
+ * `enableContextMap` (optional): If the latest parameter in logger call is of type java.util.Map then all content of it will be traversed and written with prefix `context.*`. For event-specific custom fields. 
 
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
@@ -156,3 +156,17 @@ Included is also an Elasticsearch appender for Logback Access. The configuration
 
  * The Appender class name is `com.internetitem.logback.elasticsearch.ElasticsearchAccessAppender`
  * The `value` for each `property` uses the [Logback Access conversion words](http://logback.qos.ch/manual/layouts.html#logback-access).
+
+Event-specific custom fields
+============================
+Log line:
+
+     log.info("Service started in {} seconds", duration/1000, Collections.singletonMap("duration", duration));
+
+Result:
+
+    {
+      "@timestamp": "2014-06-04T15:26:14.464+02:00",
+      "message": "Service started in 12 seconds",
+      "duration": 12368,
+    }
