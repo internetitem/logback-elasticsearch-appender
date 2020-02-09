@@ -39,6 +39,7 @@ In your `logback.xml`:
             <includeMdc>false</includeMdc> <!-- optional (default false) -->
             <maxMessageSize>100</maxMessageSize> <!-- optional (default -1 -->
             <authentication class="com.internetitem.logback.elasticsearch.config.BasicAuthentication" /> <!-- optional -->
+            <enableContextMap>false</enableContextMap><!-- optional (default false) -->
             <properties>
                 <property>
                     <name>host</name>
@@ -110,7 +111,7 @@ Configuration Reference
  * `includeMdc` (optional, default false): If set to `true`, then all [MDC](http://www.slf4j.org/api/org/slf4j/MDC.html) values will be mapped to properties on the JSON payload.
  * `maxMessageSize` (optional, default -1): If set to a number greater than 0, truncate messages larger than this length, then append "`..`" to denote that the message was truncated
  * `authentication` (optional): Add the ability to send authentication headers (see below)
-
+ * `enableContextMap` (optional): If the latest parameter in logger call is of type java.util.Map then all content of it will be traversed and written to `message` with prefix `context.*`
 The fields `@timestamp` and `message` are always sent and can not currently be configured. Additional fields can be sent by adding `<property>` elements to the `<properties>` set.
 
  * `name` (required): Key to be used in the log event
