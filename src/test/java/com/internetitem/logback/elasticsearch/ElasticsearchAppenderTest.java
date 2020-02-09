@@ -186,6 +186,7 @@ public class ElasticsearchAppenderTest {
         int aSleepTime = 10000;
         int readTimeout = 10000;
         int connectTimeout = 5000;
+        boolean enableContextMap = true;
 
         appender.setIncludeCallerData(includeCallerData);
         appender.setSleepTime(aSleepTime);
@@ -202,6 +203,7 @@ public class ElasticsearchAppenderTest {
         appender.setConnectTimeout(connectTimeout);
         appender.setRawJsonMessage(rawJsonMessage);
         appender.setIncludeMdc(includeMdc);
+        appender.setEnableContextMap(enableContextMap);
 
         verify(settings, times(1)).setReadTimeout(readTimeout);
         verify(settings, times(1)).setSleepTime(aSleepTime);
@@ -218,6 +220,8 @@ public class ElasticsearchAppenderTest {
         verify(settings, times(1)).setConnectTimeout(connectTimeout);
         verify(settings, times(1)).setRawJsonMessage(rawJsonMessage);
         verify(settings, times(1)).setIncludeMdc(includeMdc);
+        verify(settings, times(1)).setEnableContextMap(enableContextMap);
+
     }
 
 

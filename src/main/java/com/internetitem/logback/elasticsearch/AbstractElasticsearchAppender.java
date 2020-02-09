@@ -138,4 +138,8 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
     public void setMaxMessageSize(int maxMessageSize) {
     	settings.setMaxMessageSize(maxMessageSize);
 	}
+
+    public void setEnableContextMap(boolean enableContextMap) {
+        settings.setEnableContextMap(enableContextMap);
+    }
 }

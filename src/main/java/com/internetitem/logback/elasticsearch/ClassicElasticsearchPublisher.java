@@ -12,13 +12,17 @@ import com.internetitem.logback.elasticsearch.config.Property;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.AbstractPropertyAndEncoder;
 import com.internetitem.logback.elasticsearch.util.ClassicPropertyAndEncoder;
+import com.internetitem.logback.elasticsearch.util.ContextMapWriter;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
 public class ClassicElasticsearchPublisher extends AbstractElasticsearchPublisher<ILoggingEvent> {
 
     public ClassicElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties, HttpRequestHeaders headers) throws IOException {
         super(context, errorReporter, settings, properties, headers);
+        contextMapWriter = new ContextMapWriter();
     }
+
+    protected ContextMapWriter contextMapWriter;
 
     @Override
     protected AbstractPropertyAndEncoder<ILoggingEvent> buildPropertyAndEncoder(Context context, Property property) {
@@ -40,10 +44,15 @@ public class ClassicElasticsearchPublisher extends AbstractElasticsearchPublishe
             gen.writeObjectField("message", formattedMessage);
         }
 
-        if(settings.isIncludeMdc()) {
+        if (settings.isIncludeMdc()) {
             for (Map.Entry<String, String> entry : event.getMDCPropertyMap().entrySet()) {
                 gen.writeObjectField(entry.getKey(), entry.getValue());
             }
         }
+
+        if (settings.isEnableContextMap()) {
+            contextMapWriter.writeContextMap(gen, event);
+        }
     }
+
 }
