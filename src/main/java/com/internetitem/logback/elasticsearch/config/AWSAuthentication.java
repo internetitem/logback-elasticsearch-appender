@@ -18,7 +18,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.HttpMethodName;
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.util.StringInputStream;
 
 /**
@@ -34,7 +34,7 @@ public class AWSAuthentication implements Authentication {
     public AWSAuthentication() {
         signer = new AWS4Signer(false);
         signer.setServiceName("es");
-        signer.setRegionName(new DefaultAwsRegionProviderChain().getRegion());
+        signer.setRegionName(getCurrentRegion());
         AWSCredentialsProvider credsProvider = new DefaultAWSCredentialsProviderChain();
         credentials = credsProvider.getCredentials();
     }
@@ -44,6 +44,13 @@ public class AWSAuthentication implements Authentication {
 
         signer.sign(new URLConnectionSignableRequest(urlConnection, body), credentials);
     }
+    
+    private String getCurrentRegion() {
+		if(Regions.getCurrentRegion() != null) {
+			return Regions.getCurrentRegion().getName();
+		}
+		return null;
+	}
 
     /**
      * Wrapper for signing a HttpURLConnection
