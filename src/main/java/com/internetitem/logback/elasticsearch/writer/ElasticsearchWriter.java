@@ -6,8 +6,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Queue;
 
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
@@ -16,11 +19,11 @@ import com.internetitem.logback.elasticsearch.util.ErrorReporter;
 
 public class ElasticsearchWriter implements SafeWriter {
 
-	private StringBuilder sendBuffer;
+	private final Queue<String> sendQueue;
 
-	private ErrorReporter errorReporter;
-	private Settings settings;
-	private Collection<HttpRequestHeader> headerList;
+	private final ErrorReporter errorReporter;
+	private final Settings settings;
+	private final Collection<HttpRequestHeader> headerList;
 
 	private boolean bufferExceeded;
 
@@ -31,7 +34,7 @@ public class ElasticsearchWriter implements SafeWriter {
 			? headers.getHeaders()
 			: Collections.<HttpRequestHeader>emptyList();
 
-		this.sendBuffer = new StringBuilder();
+		this.sendQueue = new ArrayDeque<>();
 	}
 
 	public void write(char[] cbuf, int off, int len) {
@@ -39,16 +42,11 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
-		sendBuffer.append(cbuf, off, len);
-
-		if (sendBuffer.length() >= settings.getMaxQueueSize()) {
-			errorReporter.logWarning("Send queue maximum size exceeded - log messages will be lost until the buffer is cleared");
-			bufferExceeded = true;
-		}
+		sendQueue.add(String.valueOf(cbuf, off, len));
 	}
 
 	public void sendData() throws IOException {
-		if (sendBuffer.length() <= 0) {
+		if (!hasPendingData()) {
 			return;
 		}
 
@@ -60,7 +58,15 @@ public class ElasticsearchWriter implements SafeWriter {
 			urlConnection.setConnectTimeout(settings.getConnectTimeout());
 			urlConnection.setRequestMethod("POST");
 
-			String body = sendBuffer.toString();
+			StringBuilder bodyBuilder = new StringBuilder();
+			for(String chunk: sendQueue){
+				bodyBuilder.append(chunk);
+			}
+			String body = bodyBuilder.toString();
+			if (body.length() > settings.getMaxQueueSize()){
+				errorReporter.logWarning("Max queue size exceeded. Further messages will be dropped");
+				bufferExceeded = true;
+			}
 
 			if (!headerList.isEmpty()) {
 				for(HttpRequestHeader header: headerList) {
@@ -72,13 +78,18 @@ public class ElasticsearchWriter implements SafeWriter {
 				settings.getAuthentication().addAuth(urlConnection, body);
 			}
 
-			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
+			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), StandardCharsets.UTF_8);
 			writer.write(body);
 			writer.flush();
 			writer.close();
 
 			int rc = urlConnection.getResponseCode();
 			if (rc != 200) {
+				if (rc == 413) {
+					// 413 - Request entity too large
+					errorReporter.logWarning("413 error received - dropping the head of the queue");
+					sendQueue.poll();
+				}
 				String data = slurpErrors(urlConnection);
 				throw new IOException("Got response code [" + rc + "] from server with data " + data);
 			}
@@ -86,7 +97,7 @@ public class ElasticsearchWriter implements SafeWriter {
 			urlConnection.disconnect();
 		}
 
-		sendBuffer.setLength(0);
+		sendQueue.clear();
 		if (bufferExceeded) {
 			errorReporter.logInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
@@ -94,7 +105,7 @@ public class ElasticsearchWriter implements SafeWriter {
 	}
 
 	public boolean hasPendingData() {
-		return sendBuffer.length() != 0;
+		return sendQueue.size() != 0;
 	}
 
 	private static String slurpErrors(HttpURLConnection urlConnection) {
@@ -105,7 +116,7 @@ public class ElasticsearchWriter implements SafeWriter {
 			}
 
 			StringBuilder builder = new StringBuilder();
-			InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
 			char[] buf = new char[2048];
 			int numRead;
 			while ((numRead = reader.read(buf)) > 0) {
