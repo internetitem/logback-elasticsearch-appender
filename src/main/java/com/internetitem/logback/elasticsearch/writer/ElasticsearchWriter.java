@@ -62,9 +62,9 @@ public class ElasticsearchWriter implements SafeWriter {
 	private void doSend() throws IOException {
 		boolean sent = false;
 		int dropSize = 1;
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
-		try {
-			while(!sent && hasPendingData()) {
+		while(!sent && hasPendingData()) {
+			HttpURLConnection urlConnection = (HttpURLConnection) (settings.getUrl().openConnection());
+			try {
 				urlConnection.setDoInput(true);
 				urlConnection.setDoOutput(true);
 				urlConnection.setReadTimeout(settings.getReadTimeout());
@@ -101,7 +101,7 @@ public class ElasticsearchWriter implements SafeWriter {
 					if (rc == 413) {
 						// 413 - Request entity too large, drop the head of the queue and try again
 						errorReporter.logWarning("413 error received - dropping messages from the head of the queue");
-						for(int i=0 ; i < dropSize; i++) {
+						for (int i = 0; i < dropSize; i++) {
 							sendQueue.poll();
 						}
 						dropSize = dropSize * 2;
@@ -112,9 +112,9 @@ public class ElasticsearchWriter implements SafeWriter {
 				} else {
 					sent = true;
 				}
+			} finally {
+				urlConnection.disconnect();
 			}
-		} finally {
-			urlConnection.disconnect();
 		}
 	}
 
