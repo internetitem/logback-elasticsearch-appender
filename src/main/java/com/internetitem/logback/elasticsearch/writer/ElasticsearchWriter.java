@@ -50,57 +50,71 @@ public class ElasticsearchWriter implements SafeWriter {
 			return;
 		}
 
-		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
-		try {
-			urlConnection.setDoInput(true);
-			urlConnection.setDoOutput(true);
-			urlConnection.setReadTimeout(settings.getReadTimeout());
-			urlConnection.setConnectTimeout(settings.getConnectTimeout());
-			urlConnection.setRequestMethod("POST");
-
-			StringBuilder bodyBuilder = new StringBuilder();
-			for(String chunk: sendQueue){
-				bodyBuilder.append(chunk);
-			}
-			String body = bodyBuilder.toString();
-			if (body.length() > settings.getMaxQueueSize()){
-				errorReporter.logWarning("Max queue size exceeded. Further messages will be dropped");
-				bufferExceeded = true;
-			}
-
-			if (!headerList.isEmpty()) {
-				for(HttpRequestHeader header: headerList) {
-					urlConnection.setRequestProperty(header.getName(), header.getValue());
-				}
-			}
-
-			if (settings.getAuthentication() != null) {
-				settings.getAuthentication().addAuth(urlConnection, body);
-			}
-
-			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), StandardCharsets.UTF_8);
-			writer.write(body);
-			writer.flush();
-			writer.close();
-
-			int rc = urlConnection.getResponseCode();
-			if (rc != 200) {
-				if (rc == 413) {
-					// 413 - Request entity too large
-					errorReporter.logWarning("413 error received - dropping the head of the queue");
-					sendQueue.poll();
-				}
-				String data = slurpErrors(urlConnection);
-				throw new IOException("Got response code [" + rc + "] from server with data " + data);
-			}
-		} finally {
-			urlConnection.disconnect();
-		}
+		doSend();
 
 		sendQueue.clear();
 		if (bufferExceeded) {
 			errorReporter.logInfo("Send queue cleared - log messages will no longer be lost");
 			bufferExceeded = false;
+		}
+	}
+
+	private void doSend() throws IOException {
+		boolean sent = false;
+		int dropSize = 1;
+		HttpURLConnection urlConnection = (HttpURLConnection)(settings.getUrl().openConnection());
+		try {
+			while(!sent && hasPendingData()) {
+				urlConnection.setDoInput(true);
+				urlConnection.setDoOutput(true);
+				urlConnection.setReadTimeout(settings.getReadTimeout());
+				urlConnection.setConnectTimeout(settings.getConnectTimeout());
+				urlConnection.setRequestMethod("POST");
+
+				StringBuilder bodyBuilder = new StringBuilder();
+				for (String chunk : sendQueue) {
+					bodyBuilder.append(chunk);
+				}
+				String body = bodyBuilder.toString();
+				if (body.length() > settings.getMaxQueueSize()) {
+					errorReporter.logWarning("Max queue size exceeded. Further messages will be dropped");
+					bufferExceeded = true;
+				}
+
+				if (!headerList.isEmpty()) {
+					for (HttpRequestHeader header : headerList) {
+						urlConnection.setRequestProperty(header.getName(), header.getValue());
+					}
+				}
+
+				if (settings.getAuthentication() != null) {
+					settings.getAuthentication().addAuth(urlConnection, body);
+				}
+
+				Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), StandardCharsets.UTF_8);
+				writer.write(body);
+				writer.flush();
+				writer.close();
+
+				int rc = urlConnection.getResponseCode();
+				if (rc != 200) {
+					if (rc == 413) {
+						// 413 - Request entity too large, drop the head of the queue and try again
+						errorReporter.logWarning("413 error received - dropping messages from the head of the queue");
+						for(int i=0 ; i < dropSize; i++) {
+							sendQueue.poll();
+						}
+						dropSize = dropSize * 2;
+					} else {
+						String data = slurpErrors(urlConnection);
+						throw new IOException("Got response code [" + rc + "] from server with data " + data);
+					}
+				} else {
+					sent = true;
+				}
+			}
+		} finally {
+			urlConnection.disconnect();
 		}
 	}
 
