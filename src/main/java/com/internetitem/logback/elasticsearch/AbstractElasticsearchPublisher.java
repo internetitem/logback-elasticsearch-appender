@@ -3,6 +3,7 @@ package com.internetitem.logback.elasticsearch;
 import ch.qos.logback.core.Context;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Property;
@@ -51,6 +52,8 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 	private final PropertySerializer propertySerializer;
 
+    private Thread thread;
+
 	public AbstractElasticsearchPublisher(Context context, ErrorReporter errorReporter, Settings settings, ElasticsearchProperties properties, HttpRequestHeaders headers) throws IOException {
 		this.errorReporter = errorReporter;
 		this.events = new ArrayList<T>();
@@ -59,7 +62,8 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 		this.outputAggregator = configureOutputAggregator(settings, errorReporter, headers);
 
-		this.jf = new JsonFactory();
+		this.jf = buildJsonFactory(settings);
+
 		this.jf.setRootValueSeparator(null);
 		this.jsonGenerator = jf.createGenerator(outputAggregator);
 
@@ -67,6 +71,20 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		this.propertyList = generatePropertyList(context, properties);
 
 		this.propertySerializer = new PropertySerializer();
+    }
+
+    public void close() {
+		if(thread != null) {
+			thread.interrupt();
+		}
+	}
+
+    private JsonFactory buildJsonFactory(Settings settings) {
+		if(settings.isObjectSerialization()) {
+			ObjectMapper mapper = new ObjectMapper();
+			return mapper.getFactory();
+		}
+		return new JsonFactory();
 	}
 
 	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter, HttpRequestHeaders httpRequestHeaders)  {
@@ -108,7 +126,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 			events.add(event);
 			if (!working) {
 				working = true;
-				Thread thread = new Thread(this, THREAD_NAME_PREFIX + THREAD_COUNTER.getAndIncrement());
+				thread = new Thread(this, THREAD_NAME_PREFIX + THREAD_COUNTER.getAndIncrement());
 				thread.start();
 			}
 		}
@@ -119,7 +137,11 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		int maxRetries = settings.getMaxRetries();
 		while (true) {
 			try {
-				Thread.sleep(settings.getSleepTime());
+				try {
+					Thread.sleep(settings.getSleepTime());
+				} catch(InterruptedException e) {
+					// we are waking up the thread
+				}
 
 				List<T> eventsCopy = null;
 				synchronized (lock) {
@@ -152,6 +174,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 				if (!outputAggregator.sendData()) {
 					currentTry++;
 				}
+
 			} catch (Exception e) {
 				errorReporter.logError("Internal error handling log data: " + e.getMessage(), e);
 				currentTry++;

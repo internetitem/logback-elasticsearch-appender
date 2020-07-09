@@ -8,11 +8,13 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.zip.GZIPOutputStream;
 
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeader;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
+import org.apache.http.HttpHeaders;
 
 public class ElasticsearchWriter implements SafeWriter {
 
@@ -23,6 +25,7 @@ public class ElasticsearchWriter implements SafeWriter {
 	private Collection<HttpRequestHeader> headerList;
 
 	private boolean bufferExceeded;
+	private boolean compressedTransfer;
 
 	public ElasticsearchWriter(ErrorReporter errorReporter, Settings settings, HttpRequestHeaders headers) {
 		this.errorReporter = errorReporter;
@@ -32,6 +35,13 @@ public class ElasticsearchWriter implements SafeWriter {
 			: Collections.<HttpRequestHeader>emptyList();
 
 		this.sendBuffer = new StringBuilder();
+		compressedTransfer = false;
+		for(HttpRequestHeader header : this.headerList) {
+			if(header.getName().toLowerCase().equals(HttpHeaders.CONTENT_ENCODING.toLowerCase()) && header.getValue().equals("gzip")) {
+				compressedTransfer = true;
+				break;
+			}
+		}
 	}
 
 	public void write(char[] cbuf, int off, int len) {
@@ -72,10 +82,7 @@ public class ElasticsearchWriter implements SafeWriter {
 				settings.getAuthentication().addAuth(urlConnection, body);
 			}
 
-			Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8");
-			writer.write(body);
-			writer.flush();
-			writer.close();
+			writeData(urlConnection, body);
 
 			int rc = urlConnection.getResponseCode();
 			if (rc != 200) {
@@ -114,6 +121,20 @@ public class ElasticsearchWriter implements SafeWriter {
 			return builder.toString();
 		} catch (Exception e) {
 			return "<error retrieving data: " + e.getMessage() + ">";
+		}
+	}
+
+	private void writeData(HttpURLConnection urlConnection, String body) throws IOException {
+		if(this.compressedTransfer) {
+			try(Writer writer = new OutputStreamWriter(new GZIPOutputStream(urlConnection.getOutputStream()), "UTF-8")) {
+				writer.write(body);
+				writer.flush();
+			}
+		} else {
+			try(Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8")) {
+				writer.write(body);
+				writer.flush();
+			}
 		}
 	}
 

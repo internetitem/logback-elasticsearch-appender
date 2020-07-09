@@ -23,6 +23,8 @@ public class Settings {
 	private int maxQueueSize = 100 * 1024 * 1024;
 	private Authentication authentication;
 	private int maxMessageSize = -1;
+	private String keyPrefix;
+	private boolean objectSerialization;
 
 	public String getIndex() {
 		return index;
@@ -162,4 +164,21 @@ public class Settings {
 	public void setMaxMessageSize(int maxMessageSize) {
 		this.maxMessageSize = maxMessageSize;
 	}
+
+	public String getKeyPrefix() {
+		return this.keyPrefix;
+	}
+
+	public void setKeyPrefix(String keyPrefix) {
+		this.keyPrefix = keyPrefix;
+	}
+
+	public boolean isObjectSerialization() {
+		return objectSerialization;
+	}
+
+	public void setObjectSerialization(boolean objectSerialization) {
+		this.objectSerialization = objectSerialization;
+	}
+
 }
