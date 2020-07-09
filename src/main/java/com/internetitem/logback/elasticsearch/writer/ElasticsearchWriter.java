@@ -105,18 +105,18 @@ public class ElasticsearchWriter implements SafeWriter {
 	}
 
 	private static String slurpErrors(HttpURLConnection urlConnection) {
-		try {
-			InputStream stream = urlConnection.getErrorStream();
+		try (InputStream stream = urlConnection.getErrorStream()) {
 			if (stream == null) {
 				return "<no data>";
 			}
 
 			StringBuilder builder = new StringBuilder();
-			InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
-			char[] buf = new char[2048];
-			int numRead;
-			while ((numRead = reader.read(buf)) > 0) {
-				builder.append(buf, 0, numRead);
+			try(InputStreamReader reader = new InputStreamReader(stream, "UTF-8")) {
+				char[] buf = new char[2048];
+				int numRead;
+				while ((numRead = reader.read(buf)) > 0) {
+					builder.append(buf, 0, numRead);
+				}
 			}
 			return builder.toString();
 		} catch (Exception e) {
