@@ -22,11 +22,27 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
 	public AbstractElasticsearchAppender() {
 		this.settings = new Settings();
 		this.headers = new HttpRequestHeaders();
+		registerShutdownHook();
 	}
 
     public AbstractElasticsearchAppender(Settings settings) {
         this.settings = settings;
+		registerShutdownHook();
     }
+
+    private void registerShutdownHook() {
+		Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook()));
+	}
+
+	private class ShutdownHook implements Runnable {
+		@Override
+		public void run() {
+			stop();
+			if(publisher != null) {
+				publisher.close();
+			}
+		}
+	}
 
 	@Override
 	public void start() {
@@ -138,4 +154,13 @@ public abstract class AbstractElasticsearchAppender<T> extends UnsynchronizedApp
     public void setMaxMessageSize(int maxMessageSize) {
     	settings.setMaxMessageSize(maxMessageSize);
 	}
+
+	public void setKeyPrefix(String keyPrefix) {
+		settings.setKeyPrefix(keyPrefix);
+	}
+
+	public void setObjectSerialization(boolean objectSerialization) {
+		settings.setObjectSerialization(objectSerialization);
+	}
+
 }
