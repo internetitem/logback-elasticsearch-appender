@@ -41,6 +41,7 @@ In your `logback.xml`:
             <authentication class="com.internetitem.logback.elasticsearch.config.BasicAuthentication" /> <!-- optional -->
             <objectSerialization>true</objectSerialization> <!-- optional (default false) -->
             <keyPrefix>data.</keyPrefix> <!-- optional (default None) -->
+            
             <properties>
                 <property>
                     <name>host</name>
