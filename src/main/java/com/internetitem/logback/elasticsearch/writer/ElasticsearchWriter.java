@@ -2,6 +2,7 @@ package com.internetitem.logback.elasticsearch.writer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -48,7 +49,7 @@ public class ElasticsearchWriter implements SafeWriter {
 	public void sendData() throws IOException {
 		if (!hasPendingData()) {
 			return;
-		}
+			}
 
 		doSend();
 
@@ -91,12 +92,20 @@ public class ElasticsearchWriter implements SafeWriter {
 					settings.getAuthentication().addAuth(urlConnection, body);
 				}
 
-				Writer writer = new OutputStreamWriter(urlConnection.getOutputStream(), StandardCharsets.UTF_8);
+				OutputStream outputStream = urlConnection.getOutputStream();
+				Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
 				writer.write(body);
 				writer.flush();
 				writer.close();
+				outputStream.close();
 
 				int rc = urlConnection.getResponseCode();
+
+				// Drain the response
+				InputStream inputStream = urlConnection.getInputStream();
+				inputStream.readAllBytes();
+				inputStream.close();
+
 				if (rc != 200) {
 					if (rc == 413) {
 						// 413 - Request entity too large, drop the head of the queue and try again
@@ -105,7 +114,7 @@ public class ElasticsearchWriter implements SafeWriter {
 							sendQueue.poll();
 						}
 						dropSize = dropSize * 2;
-					} else {
+				} else {
 						String data = slurpErrors(urlConnection);
 						throw new IOException("Got response code [" + rc + "] from server with data " + data);
 					}
@@ -113,7 +122,8 @@ public class ElasticsearchWriter implements SafeWriter {
 					sent = true;
 				}
 			} finally {
-				urlConnection.disconnect();
+				// Don't disconnect - that "Indicates that other requests to the server are unlikely in the near future"
+				// urlConnection.disconnect();
 			}
 		}
 	}
@@ -129,17 +139,17 @@ public class ElasticsearchWriter implements SafeWriter {
 				return "<no data>";
 			}
 
-			StringBuilder builder = new StringBuilder();
-			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-			char[] buf = new char[2048];
-			int numRead;
-			while ((numRead = reader.read(buf)) > 0) {
-				builder.append(buf, 0, numRead);
-			}
-			return builder.toString();
+				StringBuilder builder = new StringBuilder();
+				InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+				char[] buf = new char[2048];
+				int numRead;
+				while((numRead = reader.read(buf)) > 0) {
+					builder.append(buf, 0, numRead);
+				}
+				return builder.toString();
 		} catch (Exception e) {
 			return "<error retrieving data: " + e.getMessage() + ">";
+			}
 		}
-	}
 
 }
