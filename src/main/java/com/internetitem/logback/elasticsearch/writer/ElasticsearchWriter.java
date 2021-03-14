@@ -36,6 +36,8 @@ public class ElasticsearchWriter implements SafeWriter {
 			: Collections.<HttpRequestHeader>emptyList();
 
 		this.sendQueue = new ArrayDeque<>();
+
+		System.setProperty("sun.net.http.errorstream.enableBuffering", "true");
 	}
 
 	public void write(char[] cbuf, int off, int len) {
