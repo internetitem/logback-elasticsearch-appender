@@ -69,7 +69,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		this.propertySerializer = new PropertySerializer();
 	}
 
-	private static ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter, HttpRequestHeaders httpRequestHeaders)  {
+	protected ElasticsearchOutputAggregator configureOutputAggregator(Settings settings, ErrorReporter errorReporter, HttpRequestHeaders httpRequestHeaders)  {
 		ElasticsearchOutputAggregator spigot = new ElasticsearchOutputAggregator(settings, errorReporter);
 
 		if (settings.isLogsToStderr()) {

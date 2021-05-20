@@ -97,7 +97,7 @@ public class ElasticsearchWriter implements SafeWriter {
 		return sendBuffer.length() != 0;
 	}
 
-	private static String slurpErrors(HttpURLConnection urlConnection) {
+	protected  String slurpErrors(HttpURLConnection urlConnection) {
 		try {
 			InputStream stream = urlConnection.getErrorStream();
 			if (stream == null) {
@@ -117,4 +117,30 @@ public class ElasticsearchWriter implements SafeWriter {
 		}
 	}
 
+    public StringBuilder getSendBuffer() {
+        return sendBuffer;
+    }
+
+    public Settings getSettings() {
+        return settings;
+    }
+
+    public Collection<HttpRequestHeader> getHeaderList() {
+        return headerList;
+    }
+
+    public ErrorReporter getErrorReporter() {
+        return errorReporter;
+    }
+
+    public boolean isBufferExceeded() {
+        return bufferExceeded;
+    }
+
+    public void setBufferExceeded(boolean bufferExceeded) {
+        this.bufferExceeded = bufferExceeded;
+    }
+
+        
+        
 }
