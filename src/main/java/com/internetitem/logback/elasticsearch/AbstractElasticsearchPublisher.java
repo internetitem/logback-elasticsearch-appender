@@ -172,7 +172,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 
 	private void serializeIndexString(JsonGenerator gen, T event) throws IOException {
 		gen.writeStartObject();
-		gen.writeObjectFieldStart("index");
+		gen.writeObjectFieldStart("create");
 		gen.writeObjectField("_index", indexPattern.encode(event));
 		String type = settings.getType();
 		if (type != null) {
