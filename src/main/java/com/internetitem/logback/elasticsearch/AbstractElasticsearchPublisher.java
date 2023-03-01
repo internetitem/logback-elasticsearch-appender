@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.internetitem.logback.elasticsearch.config.ElasticsearchProperties;
 import com.internetitem.logback.elasticsearch.config.HttpRequestHeaders;
-import com.internetitem.logback.elasticsearch.config.Property;
+import com.internetitem.logback.elasticsearch.config.EsProperty;
 import com.internetitem.logback.elasticsearch.config.Settings;
 import com.internetitem.logback.elasticsearch.util.AbstractPropertyAndEncoder;
 import com.internetitem.logback.elasticsearch.util.ErrorReporter;
@@ -63,7 +63,7 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 		this.jf.setRootValueSeparator(null);
 		this.jsonGenerator = jf.createGenerator(outputAggregator);
 
-		this.indexPattern = buildPropertyAndEncoder(context, new Property("<index>", settings.getIndex(), false));
+		this.indexPattern = buildPropertyAndEncoder(context, new EsProperty("<index>", settings.getIndex(), false));
 		this.propertyList = generatePropertyList(context, properties);
 
 		this.propertySerializer = new PropertySerializer();
@@ -90,14 +90,14 @@ public abstract class AbstractElasticsearchPublisher<T> implements Runnable {
 	private List<AbstractPropertyAndEncoder<T>> generatePropertyList(Context context, ElasticsearchProperties properties) {
 		List<AbstractPropertyAndEncoder<T>> list = new ArrayList<AbstractPropertyAndEncoder<T>>();
 		if (properties != null) {
-			for (Property property : properties.getProperties()) {
+			for (EsProperty property : properties.getProperties()) {
 				list.add(buildPropertyAndEncoder(context, property));
 			}
 		}
 		return list;
 	}
 
-	protected abstract AbstractPropertyAndEncoder<T> buildPropertyAndEncoder(Context context, Property property);
+	protected abstract AbstractPropertyAndEncoder<T> buildPropertyAndEncoder(Context context, EsProperty property);
 
 	public void addEvent(T event) {
 		if (!outputAggregator.hasOutputs()) {
