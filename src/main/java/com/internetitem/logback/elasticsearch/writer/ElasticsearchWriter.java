@@ -80,6 +80,12 @@ public class ElasticsearchWriter implements SafeWriter {
 			int rc = urlConnection.getResponseCode();
 			if (rc != 200) {
 				String data = slurpErrors(urlConnection);
+				if(rc >= 400 && rc < 500){
+					// no chance to recover form these errors and has to drop the log messages in order to avoid dead loop.
+					errorReporter.logInfo("Send queue cleared - drop log messages due to http 4xx error.");
+					sendBuffer.setLength(0);
+					bufferExceeded = false;
+				}
 				throw new IOException("Got response code [" + rc + "] from server with data " + data);
 			}
 		} finally {
